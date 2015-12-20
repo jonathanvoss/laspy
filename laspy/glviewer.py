@@ -4,9 +4,9 @@ import random
 import sys
 
 # OpenGL library doesn't support absolute import for gl, glu, glut, or arrays
-import OpenGL.GL as gl 
-import OpenGL.GLU as glu 
-import OpenGL.GLUT as glut 
+import OpenGL.GL as gl
+import OpenGL.GLU as glu
+import OpenGL.GLUT as glut
 from OpenGL.arrays import vbo
 
 
@@ -14,7 +14,7 @@ from OpenGL.arrays import vbo
 # Skip debugging for speedup
 #OpenGL.ERROR_CHECKING = False
 
-# Skip logging for speedup 
+# Skip logging for speedup
 #OpenGL.ERROR_LOGGING = False
 
 
@@ -33,27 +33,23 @@ class VBO_Provider():
 
         while(start_idx < len((file_object))):
             i += 1
-            try:
-                end_idx = min(len(file_object), start_idx + vbsize) 
-                print("Buffering points " + str(start_idx) + " to " + str((end_idx)))
-                dat = self.slice_file(start_idx, end_idx, means, scaled)
-                self.set_color_mode(mode,dim, start_idx, end_idx, dat)
-                _vbo = vbo.VBO(data = np.array(dat, dtype = np.float32),
-                            usage = gl.GL_DYNAMIC_DRAW, target = gl.GL_ARRAY_BUFFER)
-                self.vbos.append((_vbo, end_idx -start_idx))
-                start_idx += vbsize
-            except Exception, err:
-                print("Error initializing VBO:")
-                print(err)
+            end_idx = min(len(file_object), start_idx + vbsize)
+            print("Buffering points " + str(start_idx) + " to " + str((end_idx)))
+            dat = self.slice_file(start_idx, end_idx, means, scaled)
+            self.set_color_mode(mode,dim, start_idx, end_idx, dat)
+            _vbo = vbo.VBO(data = np.array(dat, dtype = np.float32),
+                        usage = gl.GL_DYNAMIC_DRAW, target = gl.GL_ARRAY_BUFFER)
+            self.vbos.append((_vbo, end_idx -start_idx))
+            start_idx += vbsize
 
 
     def slice_file(self,start_idx, end_idx, means, scaled):
         if scaled:
-            return(np.array(np.vstack((self.file_object.x[start_idx:end_idx], self.file_object.y[start_idx:end_idx], self.file_object.z[start_idx:end_idx], 
+            return(np.array(np.vstack((self.file_object.x[start_idx:end_idx], self.file_object.y[start_idx:end_idx], self.file_object.z[start_idx:end_idx],
                                   np.zeros(end_idx - start_idx),np.zeros(end_idx - start_idx),np.zeros(end_idx - start_idx))).T) - means)
         else:
             scale = np.array(self.file_object.header.scale + [0,0,0], dtype = np.float64)
-            dat = (np.array(np.vstack((self.file_object.X[start_idx:end_idx], self.file_object.Y[start_idx:end_idx], self.file_object.Z[start_idx:end_idx], 
+            dat = (np.array(np.vstack((self.file_object.X[start_idx:end_idx], self.file_object.Y[start_idx:end_idx], self.file_object.Z[start_idx:end_idx],
                                   np.zeros(end_idx - start_idx),np.zeros(end_idx - start_idx),np.zeros(end_idx - start_idx))).T) - means)
             dat *= (scale*100)
             return(dat)
@@ -72,22 +68,22 @@ class VBO_Provider():
             _vbo[0].bind()
             gl.glVertexPointer(3, gl.GL_FLOAT, 24,_vbo[0])
             gl.glColorPointer(3, gl.GL_FLOAT, 24, _vbo[0] + 12)
-            gl.glDrawArrays(gl.GL_POINTS, 0, _vbo[1]) 
+            gl.glDrawArrays(gl.GL_POINTS, 0, _vbo[1])
             _vbo[0].unbind()
         #gl.glMultiDrawArrays(gl.GL_POINTS, 0,100000, len(self.vbos))
-    
-    def set_color_mode(self, mode, dim,start_idx, end_idx, data): 
+
+    def set_color_mode(self, mode, dim,start_idx, end_idx, data):
         if (mode == "default"):
             if (all([x in self.file_object.point_format.lookup for x in ("red", "green", "blue")])):
-                if ((all(self.file_object.red[0:len(self.file_object):(len(self.file_object)/1000)] == 0)) and
-                    (all(self.file_object.green[0:len(self.file_object):(len(self.file_object)/1000)] == 0)) and
-                    (all(self.file_object.blue[0:len(self.file_object):(len(self.file_object)/1000)] == 0))):
+                if ((all(self.file_object.red[0:len(self.file_object):(len(self.file_object)//1000)] == 0)) and
+                    (all(self.file_object.green[0:len(self.file_object):(len(self.file_object)//1000)] == 0)) and
+                    (all(self.file_object.blue[0:len(self.file_object):(len(self.file_object)//1000)] == 0))):
                     print("Warning: Color data appears empty, using intensity mode. Specify -mode=rgb to override")
                     mode = "intensity"
                 else:
                     mode="rgb"
             else:
-                mode = "intensity" 
+                mode = "intensity"
         if mode == "rgb" and not "red" in self.file_object.point_format.lookup:
             print("Color data not found in file, using intensity")
             mode = "intensity"
@@ -124,11 +120,11 @@ class VBO_Provider():
         _max = np.max(vec)
         _min = np.min(vec)
         diff = _max-_min
-        red = (vec-_min)/float(diff) 
+        red = (vec-_min)/float(diff)
         if mode == 1:
-            col = np.array(np.vstack((red**4, np.sqrt(0.0625-(0.5-red)**4) , (1-red)**4)),dtype = np.float32).T 
+            col = np.array(np.vstack((red**4, np.sqrt(0.0625-(0.5-red)**4) , (1-red)**4)),dtype = np.float32).T
         else:
-            col = np.array(np.vstack((red**4, np.zeros(self.N) , (1-red)**4)),dtype = np.float32).T 
+            col = np.array(np.vstack((red**4, np.zeros(self.N) , (1-red)**4)),dtype = np.float32).T
         return(col)
 
 class pcl_image():
@@ -139,7 +135,7 @@ class pcl_image():
         self.look_granularity = 16.0
         self.main()
 
-    def main(self): 
+    def main(self):
         self.location = np.array([0.0,0.0,1500.0])
         self.focus = np.array([0.0,0.0,0.0])
         self.up = np.array([1.0,0.0,0.0])
@@ -165,25 +161,25 @@ class pcl_image():
 
         glut.glutMainLoop()
         return 0
- 
+
     def read_data(self, mode, dim):
         if (np.max(self.file_object.x) - np.min(self.file_object.x)) < 1:
-            means = np.array([np.mean(self.file_object.X, dtype = np.float64), 
-                          np.mean(self.file_object.Y, dtype = np.float64), 
+            means = np.array([np.mean(self.file_object.X, dtype = np.float64),
+                          np.mean(self.file_object.Y, dtype = np.float64),
                           np.mean(self.file_object.Z, dtype = np.float64),
                           0,0,0])
             scaled = False
         else:
-            means = np.array([np.mean(self.file_object.x, dtype = np.float64), 
-                    np.mean(self.file_object.y, dtype = np.float64), 
+            means = np.array([np.mean(self.file_object.x, dtype = np.float64),
+                    np.mean(self.file_object.y, dtype = np.float64),
                     np.mean(self.file_object.z, dtype = np.float64),
                     0,0,0])
             scaled = True
-        
-        self.N = len(self.file_object)
-        self.data_buffer = VBO_Provider(self.file_object, 1000000, means, mode, dim, scaled) 
 
- 
+        self.N = len(self.file_object)
+        self.data_buffer = VBO_Provider(self.file_object, 1000000, means, mode, dim, scaled)
+
+
 
     def reshape(self, w, h):
         print("Reshape " + str(w) + ", " + str(h))
@@ -195,7 +191,7 @@ class pcl_image():
         glu.gluPerspective(90,float(ratio),0.001,3000);
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
-        
+
     def timerEvent(self, arg):
         # Do stuff
         glut.glutPostRedisplay()
@@ -209,30 +205,26 @@ class pcl_image():
 
         gl.glDisableClientState(gl.GL_COLOR_ARRAY)
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-         
-        
-            
+
+
+
     def rotate_vector(self, vec_rot, vec_about, theta):
         d = np.sqrt(vec_about.dot(vec_about))
-        
-        L = np.array((0,vec_about[2], -vec_about[1], 
+
+        L = np.array((0,vec_about[2], -vec_about[1],
                     -vec_about[2], 0, vec_about[0],
                     vec_about[1], -vec_about[0], 0))
         L.shape = (3,3)
 
-        
-        try:
-           R = (np.identity(3) + np.sin(theta)/d*L +
-                    (1-np.cos(theta))/(d*d)*(L.dot(L)))
-        except:
-            print("Error in rotation.")
-            return()
+
+        R = (np.identity(3) + np.sin(theta)/d*L +
+                (1-np.cos(theta))/(d*d)*(L.dot(L)))
         return(vec_rot.dot(R))
 
     def display(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
-        glu.gluLookAt(self.location[0], self.location[1], self.location[2], 
+        glu.gluLookAt(self.location[0], self.location[1], self.location[2],
                       self.focus[0],self.focus[1], self.focus[2] ,
                       self.up[0], self.up[1], self.up[2])
         self.draw_points(self.N)
@@ -258,7 +250,7 @@ class pcl_image():
             direction /= np.sqrt(direction.dot(direction))
             self.location = self.location + ammount * direction
             self.focus = self.location + pointing
-            
+
     def camera_yaw(self, theta):
         pointing = self.focus - self.location
         newpointing = self.rotate_vector(pointing, self.up, theta)

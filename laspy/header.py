@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 import datetime
 import uuid
 from laspy import util
@@ -48,7 +49,7 @@ class ParseableVLR():
                 print("WARNING: Invalid body length for GeoKeyDictionaryTag, Not parsing.")
                 self.body_fmt = None
                 return
-            for sKeyEntry in xrange(bytes_left/8):
+            for sKeyEntry in xrange(bytes_left // 8):
                 self.body_fmt.add("wKeyId_%i" % sKeyEntry, "ctypes.c_ushort", 1)
                 self.body_fmt.add("wTIFFTagLocation_%i" % sKeyEntry, "ctypes.c_ushort", 1)
                 self.body_fmt.add("wCount_%i" % sKeyEntry, "ctypes.c_ushort", 1)
@@ -60,7 +61,7 @@ class ParseableVLR():
             if self.rec_len_after_header % 8 != 0:
                 print("WARNING: Invalid body length for GeoDoubleParamsTag, not parsing.")
                 return
-            for i in xrange(self.rec_len_after_header/8):
+            for i in xrange(self.rec_len_after_header // 8):
                 self.body_fmt.add("param_%i" % i, "ctypes.c_double", 1)
 
         elif "LASF_Projection" in self.user_id and self.record_id == 34737:
@@ -74,7 +75,7 @@ class ParseableVLR():
             if self.rec_len_after_header % 16 != 0:
                 print("WARNING: Invalid body length for classification lookup, not parsing.")
                 return
-            for i in xrange(self.rec_len_after_header / 16):
+            for i in xrange(self.rec_len_after_header // 16):
                 self.body_fmt.add("ClassNumber_%i", "ctypes.c_ubyte", 1)
                 self.body_fmt.add("Description_%i", "ctypes.c_char", 15)
 
@@ -84,7 +85,7 @@ class ParseableVLR():
             if self.rec_len_after_header % 257 != 0:
                 print("WARNING: Invalid body length for header flight line lookup, not parsing.")
                 return
-            for i in xrange(self.rec_len_after_header / 257):
+            for i in xrange(self.rec_len_after_header // 257):
                 self.body_fmt.add("FileMarkerNumber_%i", "ctypes.c_ubyte", 1)
                 self.body_fmt.add("Filename_%i", "ctypes.c_char", 256)
 
@@ -313,7 +314,7 @@ class EVLR(ParseableVLR):
             raise util.LaspyException("""Invalid record length for extra bytes
                                      specification, must be multiple of 192.""")
         else:
-            recs = self.rec_len_after_header / 192
+            recs = self.rec_len_after_header // 192
             for i in xrange(recs):
                 new_rec = ExtraBytesStruct()
                 new_rec.build_from_vlr(self, i)
@@ -428,7 +429,7 @@ class VLR(ParseableVLR):
             raise util.LaspyException("""Invalid record length for extra bytes
                                      specification, must be multiple of 192.""")
         else:
-            recs = self.rec_len_after_header / 192
+            recs = self.rec_len_after_header // 192
             for i in xrange(recs):
                 new_rec = ExtraBytesStruct()
                 new_rec.build_from_vlr(self, i)

@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 from laspy import base
 from laspy import util
 from laspy import header

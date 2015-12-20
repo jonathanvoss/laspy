@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 import mmap
 import laspy
 import os
@@ -1287,6 +1288,7 @@ class Writer(FileManager):
         if not scale:
             self.set_dimension("X", X)
             return
+
         self.set_dimension("X", np.round((X - self.header.offset[0])/self.header.scale[0]))
         return
 

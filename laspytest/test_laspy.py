@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 import laspy
 from laspy.base import *
 import laspy.file as File
