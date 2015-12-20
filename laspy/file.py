@@ -6,7 +6,7 @@ import os
 
 class File(object):
     ''' Base file object in laspy. Provides access to most laspy functionality,
-    and holds references to the HeaderManager, Reader, and potentially Writer objects. 
+    and holds references to the HeaderManager, Reader, and potentially Writer objects.
     '''
     def __init__(self, filename,
                        header=None,
@@ -39,7 +39,7 @@ class File(object):
             If a file is open for write, it cannot be opened for read and vice
             versa.
 
-        >>> import laspy 
+        >>> import laspy
         >>> f = laspy.file.File('file.las', mode='r')
         >>> for p in f:
         ...     print 'X,Y,Z: ', p.x, p.y, p.z
@@ -65,7 +65,7 @@ class File(object):
     def open(self):
         '''Open the file for processing, called by __init__
         '''
-       
+
         if self._mode == 'r':
             if not os.path.exists(self.filename):
                 raise OSError("No such file or directory: '%s'" % self.filename)
@@ -73,7 +73,7 @@ class File(object):
             if self._header is None:
                 self._reader = base.Reader(self.filename, mode=self._mode)
                 self._header = self._reader.get_header()
-            else: 
+            else:
                 raise util.LaspyException("Headers must currently be stored in the file, you provided: " + str(self._header))
                 self._reader = base.Reader(self.filename, mode = self._mode, header=self._header)
 
@@ -97,17 +97,17 @@ class File(object):
                 if self._writer.extra_dimensions != []:
                     for dimension in self._writer.extra_dimensions:
                         dimname = dimension.name.replace("\x00", "").replace(" ", "_").lower()
-                        self.addProperty(dimname) 
+                        self.addProperty(dimname)
             else:
                 raise util.LaspyException("Headers must currently be stored in the file, you provided: " + str(self._header))
-    
-        if self._mode == 'w': 
+
+        if self._mode == 'w':
             if self._header is None:
-                raise util.LaspyException("Creation of a file in write mode requires a header object.")  
+                raise util.LaspyException("Creation of a file in write mode requires a header object.")
             if isinstance(self._header,  header.HeaderManager):
                 vlrs = self._header.vlrs
                 evlrs = self._header.evlrs
-                self._header = self._header.copy() 
+                self._header = self._header.copy()
                 if self._vlrs != False:
                     self._vlrs.extend(vlrs)
                 else:
@@ -118,21 +118,21 @@ class File(object):
                     self._evlrs = evlrs
 
             self._writer = base.Writer(self.filename, mode = "w",
-                                      header = self._header, 
+                                      header = self._header,
                                       vlrs = self._vlrs, evlrs = self._evlrs)
             self._reader = self._writer
             ## Wire up API for any extra Dimensions
             if self._writer.extra_dimensions != []:
                 for dimension in self._writer.extra_dimensions:
                     dimname = dimension.name.replace("\x00", "").replace(" ", "_").lower()
-                    self.addProperty(dimname) 
+                    self.addProperty(dimname)
 
         if self._mode == 'w+':
             raise NotImplementedError
 
         if self._reader.compressed and self._mode != "r":
-            raise NotImplementedError("Compressed files / buffer objects can only be opened in mode 'r' for now")            
-            
+            raise NotImplementedError("Compressed files / buffer objects can only be opened in mode 'r' for now")
+
 
     def close(self, ignore_header_changes = False, minmax_mode="scaled"):
         '''Closes the LAS file
@@ -141,21 +141,16 @@ class File(object):
             self._reader.close()
             self._reader = None
             self._header = None
-        else: 
-            self._writer.close(ignore_header_changes, minmax_mode)    
+        else:
+            self._writer.close(ignore_header_changes, minmax_mode)
             self._reader = None
             self._writer = None
             self._header = None
 
     def visualize(self, mode = "default", dim = "intensity"):
-        try:
-            import glviewer
-            glviewer.run_glviewer(self, mode= mode, dim = dim)
-            return(0)
-        except Exception, err:
-            print("Something went wrong: ")
-            print(err)
-            return(1)
+        import glviewer
+        glviewer.run_glviewer(self, mode= mode, dim = dim)
+        return(0)
 
     def addProperty(self, name):
         def fget(self):
@@ -172,7 +167,7 @@ class File(object):
 
     def assertWriteMode(self):
         if self._mode == "r":
-            raise util.LaspyException("File is not opened in a write mode.")         
+            raise util.LaspyException("File is not opened in a write mode.")
 
     # TO BE IMPLEMENTED
     def set_srs(self, value):
@@ -194,14 +189,14 @@ class File(object):
     not set.  The header's SRS must be valid and exist for reprojection
     to occur. GDAL support must also be enabled for the library for
     reprojection to happen.'''
-    
+
     output_srs = property(get_output_srs, set_output_srs, None, doc)
 
     def set_input_srs(self, value):
         if self._mode == "r":
             return
         else:
-            return 
+            return
 
     def get_input_srs(self):
         return self.in_srs
@@ -211,7 +206,7 @@ class File(object):
     input_srs = property(get_input_srs, set_input_srs, None, doc)
 
     def get_header(self):
-        '''Returns the laspy.header.Header for the file''' 
+        '''Returns the laspy.header.Header for the file'''
         if self._mode == "r":
             return self._reader.get_header()
         else:
@@ -222,7 +217,7 @@ class File(object):
         '''Sets the laspy.header.Header for the file.  If the file is in \
         append mode, the header will be overwritten in the file.'''
         # append mode
-        if self._mode == "w+": 
+        if self._mode == "w+":
             self._writer.set_header(header)
             return True
         raise util.LaspyException("The header can only be set "
@@ -255,7 +250,7 @@ class File(object):
     def set_reader(self, reader):
         self._reader = reader
     doc = '''The file's :obj:`laspy.base.Reader` object.'''
-    
+
     reader = property(get_reader, set_reader, None, doc)
 
     doc = '''The file's :obj:`laspy.base.Writer` object, if applicable.'''
@@ -268,39 +263,39 @@ class File(object):
         return self._reader.get_points()
 
     def set_points(self, new_points):
-        '''Set the points in the file from a valid numpy array, as generated from get_points, 
+        '''Set the points in the file from a valid numpy array, as generated from get_points,
         or a list/array of laspy.base.Point instances.'''
         self.assertWriteMode()
         self._writer.set_points(new_points)
         return
-    doc = '''The point data from the file. Get or set the points as either a valid numpy array, or 
-    a list/array of laspy.base.Point instances. In write mode, the number of point records is set the 
+    doc = '''The point data from the file. Get or set the points as either a valid numpy array, or
+    a list/array of laspy.base.Point instances. In write mode, the number of point records is set the
     first time a dimension or point array is supplied to the file.'''
     points = property(get_points, set_points, None, doc)
 
     def read(self, index, nice = True):
         '''Reads the point at the given index'''
         if self._reader.get_pointrecordscount() >= index:
-            return(self._reader.get_point(index, nice)) 
+            return(self._reader.get_point(index, nice))
         else:
             raise util.LaspyException("Index greater than point records count")
-        
+
     def get_x(self):
         return(self._reader.get_x())
     def set_x(self,x):
         self.assertWriteMode()
         self._writer.set_x(x)
         return
-    
+
     def get_x_scaled(self):
         return(self._reader.get_x(scale =True))
-    
+
     def set_x_scaled(self,x):
         self.assertWriteMode()
         self._writer.set_x(x, scale = True)
         return
 
-   
+
 
     X = property(get_x, set_x, None, None)
     x = property(get_x_scaled, set_x_scaled, None, None)
@@ -312,7 +307,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_y(y)
         return
-    
+
     def get_y_scaled(self):
         return(self._reader.get_y(scale = True))
     def set_y_scaled(self, y):
@@ -328,14 +323,14 @@ class File(object):
         return(self._reader.get_z())
     def set_z(self, z):
         self.assertWriteMode()
-        self._writer.set_z(z)    
+        self._writer.set_z(z)
         return
 
     def get_z_scaled(self):
         return(self._reader.get_z(scale = True))
     def set_z_scaled(self, z):
         self.assertWriteMode()
-        self._writer.set_z(z, scale = True)    
+        self._writer.set_z(z, scale = True)
         return
 
 
@@ -359,9 +354,9 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_flag_byte(byte)
         return
-    
+
     flag_byte = property(get_flag_byte, set_flag_byte, None, None)
-    
+
     def get_return_num(self):
         return(self._reader.get_return_num())
     def set_return_num(self, num):
@@ -405,7 +400,7 @@ class File(object):
         self._writer.set_raw_classification(classification)
         return
 
-    raw_classification = property(get_raw_classification, 
+    raw_classification = property(get_raw_classification,
                                   set_raw_classification, None, None)
     Raw_Classification = raw_classification
 
@@ -415,7 +410,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_classification(classification)
         return
-    classification = property(get_classification, 
+    classification = property(get_classification,
                               set_classification, None, None)
     Classification = classification
 
@@ -425,7 +420,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_classification_flags(value)
 
-    classification_flags = property(get_classification_flags, set_classification_flags, None, None) 
+    classification_flags = property(get_classification_flags, set_classification_flags, None, None)
 
     def get_scanner_channel(self):
         return(self._writer.get_scanner_channel())
@@ -443,7 +438,7 @@ class File(object):
         return
 
     synthetic = property(get_synthetic, set_synthetic, None, None)
-    Synthetic = synthetic 
+    Synthetic = synthetic
 
     def get_key_point(self):
         return(self._reader.get_key_point())
@@ -508,7 +503,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_gps_time(data)
         return
-    
+
     gps_time = property(get_gps_time, set_gps_time, None, None)
 
     def get_red(self):
@@ -525,7 +520,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_green(green)
         return
-    
+
     green = property(get_green, set_green, None, None)
     Green = green
 
@@ -545,7 +540,7 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_wave_packet_desc_index(idx)
         return
-    
+
     def get_nir(self):
         return(self._reader.get_nir())
     def set_nir(self, value):
@@ -556,7 +551,7 @@ class File(object):
 
     wave_packet_desc_index = property(get_wave_packet_desc_index,
                                       set_wave_packet_desc_index, None, None)
-    
+
     def get_byte_offset_to_waveform_data(self):
         return(self._reader.get_byte_offset_to_waveform_data())
     def set_byte_offset_to_waveform_data(self, idx):
@@ -567,7 +562,7 @@ class File(object):
     byte_offset_to_waveform_data = property(get_byte_offset_to_waveform_data,
                                             set_byte_offset_to_waveform_data,
                                             None, None)
-    
+
     def get_waveform_packet_size(self):
         return(self._reader.get_waveform_packet_size())
     def set_waveform_packet_size(self, size):
@@ -575,10 +570,10 @@ class File(object):
         self._writer.set_waveform_packet_size(size)
         return
 
-    waveform_packet_size = property(get_waveform_packet_size, 
-                                    set_waveform_packet_size, 
+    waveform_packet_size = property(get_waveform_packet_size,
+                                    set_waveform_packet_size,
                                     None, None)
-    
+
     def get_return_point_waveform_loc(self):
         return(self._reader.get_return_point_waveform_loc())
     def set_return_point_waveform_loc(self, loc):
@@ -586,10 +581,10 @@ class File(object):
         self._writer.set_return_point_waveform_loc(loc)
         return
 
-    return_point_waveform_loc = property(get_return_point_waveform_loc, 
+    return_point_waveform_loc = property(get_return_point_waveform_loc,
                                       set_return_point_waveform_loc,
                                       None, None)
-    
+
     def get_x_t(self):
         return(self._reader.get_x_t())
     def set_x_t(self,x):
@@ -622,12 +617,12 @@ class File(object):
         self.assertWriteMode()
         self._writer.set_extra_bytes(new)
 
-    doc = '''It is possible to specify a data_record_length longer than the default, 
-            and the extra space is treated by laspy as raw bytes accessable via this extra_bytes property. 
+    doc = '''It is possible to specify a data_record_length longer than the default,
+            and the extra space is treated by laspy as raw bytes accessable via this extra_bytes property.
             This dimension is only assignable for files in write mode which were instantiated with the appropriate
             data_record_length from the header.'''
     extra_bytes = property(get_extra_bytes, set_extra_bytes, None, doc)
-        
+
     def __iter__(self):
         '''Iterator support (read mode only)
 
@@ -641,7 +636,7 @@ class File(object):
             self.at_end = False
             p = self._reader.get_point(0)
             while p and not self.at_end:
-                
+
                 yield p
                 p = self._reader.get_next_point()
                 if not p:
@@ -715,16 +710,16 @@ class File(object):
     point_format = property(get_point_format, None, None, doc)
 
 
-    
+
 #    def get_xmlsummary(self):
 #        '''Returns an XML string summarizing all of the points in the reader
-#        
+#
 #        .. note::
-#            This method will reset the reader's read position to the 0th 
-#            point to summarize the entire file, and it will again reset the 
+#            This method will reset the reader's read position to the 0th
+#            point to summarize the entire file, and it will again reset the
 #            read position to the 0th point upon completion.'''
 #        if self._mode != 0:
 #            raise util.LaspyException("file must be in read mode, not append or write mode to provide xml summary")
 #        return
-#        
+#
 #    summary = property(get_xmlsummary, None, None, None)
