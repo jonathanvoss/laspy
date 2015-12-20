@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import laspy
 import argparse
 
@@ -10,21 +11,21 @@ class lascopy():
     def parse_args(self):
         '''Set up the argparser to accept command line arguments.'''
         parser = argparse.ArgumentParser(
-                description="""Accept in_file and out_file .LAS files, and 
+                description="""Accept in_file and out_file .LAS files, and
                 convert from in_file to out_file according to point_format
                 and file_version.""")
-        parser.add_argument('in_file', metavar='in_file', type=str, 
+        parser.add_argument('in_file', metavar='in_file', type=str,
                             nargs='+', help='input file path')
-        parser.add_argument('out_file', metavar='out_file', type=str, 
+        parser.add_argument('out_file', metavar='out_file', type=str,
                             nargs='+', help='output file path')
-        parser.add_argument('point_format', metavar='point_format', type=int, 
+        parser.add_argument('point_format', metavar='point_format', type=int,
                             nargs='+', help='output point format (0-10)')
-        parser.add_argument('file_version', metavar='file_version', type=str, 
+        parser.add_argument('file_version', metavar='file_version', type=str,
                             nargs='+', help='output file version 1.0-1.4')
         parser.add_argument('-u', type=bool,
                 help="Update the header histogram? (slow)", default=False)
         parser.add_argument('-b', type=bool,
-                help="Attempt to preserve incompatable sub-byte sized data fields if present? (slow)", 
+                help="Attempt to preserve incompatable sub-byte sized data fields if present? (slow)",
                 default=False)
 
         self.args = parser.parse_args()
@@ -34,12 +35,12 @@ class lascopy():
         UPDATE_HISTOGRAM= self.args.u
         PRESERVE = self.args.b
 
-        ## Try to open in_file in read mode. 
+        ## Try to open in_file in read mode.
         file_version = self.args.file_version[0]
         point_format = self.args.point_format[0]
         try:
             inFile = laspy.file.File(self.args.in_file[0], mode = "r")
-        except Exception, error:
+        except Exception as error:
             print("There was an error reading in the input file: ")
             print(error)
             quit()
@@ -53,7 +54,7 @@ class lascopy():
             raise Exception("Point format %i is not available for file version %s" %
                             (point_format, file_version))
         if (point_format >= 2 and not (file_version in ["1.2", "1.3", "1.4"])):
-            raise Exception("Point format %i is not available for file version %s" % 
+            raise Exception("Point format %i is not available for file version %s" %
                             (point_format, file_version))
 
         ## Store depricated data for use later.
@@ -61,22 +62,22 @@ class lascopy():
         old_point_format = inFile.header.data_format_id
 
 
-        ## Set global flag, which indicates whether the input and Output point formats 
-        ## have compatable sub-byte fields. 
+        ## Set global flag, which indicates whether the input and Output point formats
+        ## have compatable sub-byte fields.
         SUB_BYTE_COMPATABLE = (old_point_format <= 5) == (point_format <= 5)
 
-        ## Tell the user what we're doing. 
+        ## Tell the user what we're doing.
         print("Input File: " + self.args.in_file[0] + ", %i point records." % len(inFile))
         print("Output File: " + self.args.out_file[0])
-        print("Converting from file version %s to version %s." %(old_file_version, file_version)) 
+        print("Converting from file version %s to version %s." %(old_file_version, file_version))
         print("Converting from point format %i to format %i."%(old_point_format, point_format))
 
         ## Warn the user if they chose potentially incompatable point formats and didn't specify -b=True
         if (not SUB_BYTE_COMPATABLE) and (not PRESERVE):
-            print("""WARNING: The sub-byte sized fields differ between point formats 
-                    %i and %i. By default this information will be lost. If you want 
-                    laspy to try to preserve as much as possible, specify -b=True, though 
-                    this may be quite slow depending on the size of the dataset.""" 
+            print("""WARNING: The sub-byte sized fields differ between point formats
+                    %i and %i. By default this information will be lost. If you want
+                    laspy to try to preserve as much as possible, specify -b=True, though
+                    this may be quite slow depending on the size of the dataset."""
                     % (old_point_format, point_format))
 
 
@@ -86,7 +87,7 @@ class lascopy():
         ## 3. See if we need to re-map legacy fields for 1.4 files.
         try:
             new_header = inFile.header.copy()
-            new_header.format = file_version 
+            new_header.format = file_version
             new_header.data_format_id = point_format
 
             old_data_rec_len = new_header.data_record_length
@@ -110,17 +111,17 @@ class lascopy():
             outFile = laspy.file.File(self.args.out_file[0], header = new_header, mode = "w", vlrs = inFile.header.vlrs, evlrs = evlrs)
             if outFile.point_format.rec_len != outFile.header.data_record_length:
                 pass
-        except Exception, error:
+        except Exception as error:
             print("There was an error instantiating the output file.")
             print(error)
             quit()
 
-        ## Copy point dimensions. 
+        ## Copy point dimensions.
         try:
             for dimension in inFile.point_format.specs:
                 if dimension.name in outFile.point_format.lookup:
                     ## Skip sub_byte field record bytes if incompatable
-                    if (not SUB_BYTE_COMPATABLE and dimension.name in ("raw_classification", 
+                    if (not SUB_BYTE_COMPATABLE and dimension.name in ("raw_classification",
                         "classification_flags", "classification_byte", "flag_byte")):
                         continue
                     outFile.writer.set_dimension(dimension.name, inFile.reader.get_dimension(dimension.name))
@@ -142,12 +143,12 @@ class lascopy():
                 else:
                     try:
                         outFile.classification = inFile.classification
-                    except Exception, error:
+                    except Exception as error:
                         print("Error, couldnt set classification.")
                         print(error)
                     try:
                         outFile.return_num = inFile.return_num
-                    except Exception, error:
+                    except Exception as error:
                         print("Error, coun't set return number.")
                         print(error)
                     try:
@@ -161,7 +162,7 @@ class lascopy():
                     outFile.withheld = inFile.withheld
 
 
-        except Exception, error:
+        except Exception as error:
             print("Error copying data.")
             print(error)
             quit()

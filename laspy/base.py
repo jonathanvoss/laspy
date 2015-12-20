@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import mmap
 import laspy
 import os
 import datetime
 import struct
-import util
+from laspy import util
 from types import GeneratorType
 import numpy as np
 import copy

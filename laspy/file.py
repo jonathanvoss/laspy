@@ -1,6 +1,7 @@
-import base
-import util
-import header
+from __future__ import absolute_import
+from laspy import base
+from laspy import util
+from laspy import header
 import copy
 import os
 

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import argparse
 import laspy
 import code
@@ -11,15 +12,15 @@ class lasexplorer():
     def parse_args(self):
         parser =argparse.ArgumentParser(description = """Open a file in read mode and
                                         print a simple description.""")
-        parser.add_argument("in_file", metavar = "in_file", 
+        parser.add_argument("in_file", metavar = "in_file",
                             type=str,nargs="+",help = "LAS file to explore")
-        parser.add_argument("--mode",metavar="file mode", type=str,default="r", 
+        parser.add_argument("--mode",metavar="file mode", type=str,default="r",
                 help = "Mode, default is r. Acceptable values: (r, rw)")
-        parser.add_argument("-q", metavar="quiet", type=bool, default=False, 
+        parser.add_argument("-q", metavar="quiet", type=bool, default=False,
                 help ="Skip summary? (default false)")
 
         self.args = parser.parse_args()
-     
+
     def setup(self):
     # Check mode
         if self.args.mode =="rw":
@@ -34,7 +35,7 @@ class lasexplorer():
             self.inFile = inFile
             READ_SUCCESS = True
             print("Read successful, file object is called inFile")
-        except Exception, error:
+        except Exception as error:
             print("Error while reading file:")
             print(error)
             READ_SUCCESS = False
@@ -49,13 +50,13 @@ class lasexplorer():
             print("Point Dimensions: ")
             for dim in inFile.point_format:
                 print("    " + dim.name)
-        
+
     def explore(self):
         inFile = self.inFile
-        interp = code.InteractiveConsole(locals={"inFile":inFile}) 
+        interp = code.InteractiveConsole(locals={"inFile":inFile})
         try:
             interp.interact()
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             quit()
 
 def main():

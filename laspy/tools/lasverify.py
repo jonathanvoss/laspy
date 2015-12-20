@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import laspy
 import argparse
 
@@ -15,7 +16,7 @@ class lasverify():
         parser.add_argument('file_2', metavar='file_2', type=str, nargs='+',
                             help='LAS file 2 path.')
 
-        parser.add_argument('-b', type=bool,help='''Attempt to compare incompatable 
+        parser.add_argument('-b', type=bool,help='''Attempt to compare incompatable
                 sub-byte sized data fields if present? (slow)''', default=False)
 
         self.args = parser.parse_args()
@@ -24,28 +25,28 @@ class lasverify():
     ## Set global varibles for convenience.
         file_1 = self.args.file_1[0]
         file_2 = self.args.file_2[0]
-        PRESERVE = self.args.b 
+        PRESERVE = self.args.b
 
     ## Try to open both files in read mode.
         try:
             inFile1 = laspy.file.File.File(file_1,mode= "r")
             inFile2 = laspy.file.File.File(file_2,mode= "r")
-        except Exception, error:
+        except Exception as error:
             print("Error reading in files:")
             print(error)
             quit()
 
-    ## Set global flag to indicate whether we need to look at incompatable 
-    ## bit field bytes. 
-        SUB_BYTE_COMPATABLE = ((inFile1.header.data_format_id <= 5) == 
-                            (inFile2.header.data_format_id <= 5)) 
+    ## Set global flag to indicate whether we need to look at incompatable
+    ## bit field bytes.
+        SUB_BYTE_COMPATABLE = ((inFile1.header.data_format_id <= 5) ==
+                            (inFile2.header.data_format_id <= 5))
 
     ## Warn the user if they chose not to check incompatable point formats.
         if (not SUB_BYTE_COMPATABLE) and (not PRESERVE):
-            print("""WARNING: Point formats %i and %i have mismatched sub-byte fields. 
-                    The default behavior in this case is to ignore these fields during 
+            print("""WARNING: Point formats %i and %i have mismatched sub-byte fields.
+                    The default behavior in this case is to ignore these fields during
                     the file_verify procedure. If you want laspy to attempt to match up
-                    sub-byte data between these two formats, specify -b=True 
+                    sub-byte data between these two formats, specify -b=True
                     (this might take some time depending on the size of the file)""")
 
         def print_title(string):
@@ -53,7 +54,7 @@ class lasverify():
             print("#  " + string + " "*(65 - (len(string) + 4)) + "#")
             print("#"*65)
 
-    ## Define convenience function to try to compare point dimensions. 
+    ## Define convenience function to try to compare point dimensions.
         def f(x):
             try:
                 return(1*(list(inFile1.reader.get_dimension(x)) == list(inFile2.reader.get_dimension(x))))
@@ -66,9 +67,9 @@ class lasverify():
                     print(outstr + "not present in file_2.")
                 else:
                     print("There was an error comparing dimension: %s" + str(x))
-                return(2)
+                return 2
 
-    ## Define convenience function to try to compare header fields. 
+    ## Define convenience function to try to compare header fields.
         def g(x):
             try:
                 return((1*(inFile1.reader.get_header_property(x) == inFile2.reader.get_header_property(x))))
@@ -130,7 +131,6 @@ class lasverify():
 
     ## Check EVLRs
         print_title("Checking EVLRs")
-        try:
             if len(inFile1.header.evlrs) != len(inFile2.header.evlrs):
                 print("Number of VLRs differs: file_1 has %i and file_2 has %i. Comparing where possible..."
                         % (len(inFile1.header.evlrs), len(inFile2.header.evlrs)))
@@ -144,8 +144,6 @@ class lasverify():
                     print(outstr + "identical")
                 else:
                     print(outstr + "different")
-        except:
-            print("There was a problem comparing EVLRs")
 
     ## Build a union of dimensions in each file, then compare them.
         dims = set()
@@ -159,7 +157,7 @@ class lasverify():
         for dim in dims:
             if not SUB_BYTE_COMPATABLE and dim in ("raw_classification","classification_flags", "classification_byte", "flag_byte"):
                 continue
-            outstr = "Dimension: %s" % dim 
+            outstr = "Dimension: %s" % dim
             outstr += " "*(50-len(outstr))
             result = f(dim)
             if result == 1:
@@ -183,7 +181,7 @@ class lasverify():
         sb_total = 0
         if not SUB_BYTE_COMPATABLE and PRESERVE:
             print("Comparing sub-byte fields (this might take awhile)")
-            sb_total += print_sb("classification", all(inFile1.classification == inFile2.classification)) 
+            sb_total += print_sb("classification", all(inFile1.classification == inFile2.classification))
             sb_total += print_sb("return_num", all(inFile1.return_num == inFile2.return_num))
             sb_total += print_sb("num_returns", all(inFile1.num_returns == inFile2.num_returns))
             sb_total += print_sb("scan_dir_flag", all(inFile1.scan_dir_flag == inFile2.scan_dir_flag))

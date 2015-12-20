@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import laspy
 import numpy as np
 import argparse
@@ -10,9 +11,9 @@ class validate():
         self.errors = 0
         self.tests = 0
 
-    def parse_args(self):        
-        parser = argparse.ArgumentParser(description="""Accept the path to a .LAS file, 
-                                                    and print a list of point records 
+    def parse_args(self):
+        parser = argparse.ArgumentParser(description="""Accept the path to a .LAS file,
+                                                    and print a list of point records
                                                     with invalid (X,Y,Z) information.""")
 
         parser.add_argument("in_file", metavar="Input File", type = str, nargs=1, help = "Path to input file")
@@ -62,7 +63,7 @@ class validate():
                 else:
                     print("... Bounding box appears to be invalid.")
                     logging.info("Bounding box appears to be invalid.")
-                    
+
             else:
                 print("... printing bad indices to log: " + self.args.log)
                 for i in bad_indices[0]:
@@ -76,7 +77,7 @@ class validate():
         print("Test 2: Checking that header bounding box is precise.")
         actual_max = [np.max(vec) for vec in [inFile.x, inFile.y, inFile.z]]
         actual_min = [np.min(vec) for vec in [inFile.x, inFile.y, inFile.z]]
-        header_max = inFile.header.max 
+        header_max = inFile.header.max
         header_min = inFile.header.min
         max_diffs = [actual_max[i] - header_max[i] for i in range(3)]
         min_diffs = [actual_min[i] - header_min[i] for i in range(3)]
@@ -131,7 +132,7 @@ class validate():
 
 
 def main():
-    validator = validate()  
+    validator = validate()
     logging.basicConfig(filename=validator.args.log,level=logging.DEBUG)
     validator.validate()
 

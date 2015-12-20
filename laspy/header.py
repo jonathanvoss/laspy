@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 import datetime
 import uuid
-import util
+from laspy import util
 import struct
 import copy
 import numpy as np
