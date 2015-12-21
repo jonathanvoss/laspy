@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 import ctypes
 import struct
 
@@ -24,7 +25,7 @@ LEfmt = {"ctypes.c_long":"<l","ctypes.c_ulong":"<L", "ctypes.c_ushort":"<H", "ct
 npFmt = {"<l":"i4", "<L":"u4", "<h":"i2","<H":"u2", "<B":"u1", "<f":"f4", "<s":"S1", "<d":"f8", "<Q":"u8", "<b":"i1"}
 
 
-defaults = {"<L":0,"<l":0, "<H":0, "<h":0, "<B": "0", "<b":"0", "<f":0.0, "<s":" ", "<d":0.0, "<Q":0}
+defaults = {"<L":0,"<l":0, "<H":0, "<h":0, "<B": b"0", "<b":b"0", "<f":0.0, "<s":" ", "<d":0.0, "<Q":0}
 
 edim_fmt_dict = {
     1:("ctypes.c_ubyte",1),

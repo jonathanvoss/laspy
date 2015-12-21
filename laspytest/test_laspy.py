@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 import laspy
 from laspy.base import *
 import laspy.file as File
@@ -322,7 +323,7 @@ class LasWriterTestCase(unittest.TestCase):
     def test_vlr_defined_dimensions2(self):
         """Testing VLR defined dimension API"""
         File2 = File.File(self.output_tempfile, mode = "w", header = self.FileObject.header)
-        File2.define_new_dimension("test_dimension", 5, "This is a test.")
+        File2.define_new_dimension(b"test_dimension", 5, b"This is a test.")
         File2.X = self.FileObject.X
         self.assertTrue(File2.test_dimension[500] == 0)
         File2.close(ignore_header_changes = True)
@@ -561,9 +562,9 @@ class LasWriteModeTestCase(unittest.TestCase):
             in_dim = File1.reader.get_dimension(dim.name)
             if dim.name in File2.point_format.lookup:
                 File2.writer.set_dimension(dim.name, in_dim)
-        File2.extra_bytes = ["Test"] * len(File2)
+        File2.extra_bytes = [b"Test"] * len(File2)
 
-        self.assertTrue("Test" in str(File2.get_extra_bytes()[14]))
+        self.assertIn("Test", str(File2.get_extra_bytes()[14]))
         File2.close(ignore_header_changes = True)
     def tearDown(self):
         self.File1.close()
@@ -735,11 +736,11 @@ class LasV_14TestCase(unittest.TestCase):
         """Testing v1.4 VLR defined dimensions (LL API)"""
         new_header = self.File1.header.copy()
         # Test basic numeric dimension
-        new_dim_record1 = header.ExtraBytesStruct(name = "Test Dimension 1234", data_type = 5)
+        new_dim_record1 = header.ExtraBytesStruct(name = b"Test Dimension 1234", data_type = 5)
         # Test string dimension (len 3)
-        new_dim_record2 = header.ExtraBytesStruct(name = "Test Dimension 5678", data_type = 22)
+        new_dim_record2 = header.ExtraBytesStruct(name = b"Test Dimension 5678", data_type = 22)
         # Test integer array dimension (len 3)
-        new_dim_record3 = header.ExtraBytesStruct(name = "Test Dimension 9", data_type =  26)
+        new_dim_record3 = header.ExtraBytesStruct(name = b"Test Dimension 9", data_type =  26)
         new_VLR_rec = header.VLR(user_id = "LASF_Spec", record_id = 4,
                 VLR_body = (new_dim_record1.to_byte_string() + new_dim_record2.to_byte_string() + new_dim_record3.to_byte_string()))
         new_header.data_record_length += (19)
@@ -759,8 +760,8 @@ class LasV_14TestCase(unittest.TestCase):
     def test_vlr_defined_dimensions2(self):
         """Testing VLR defined dimensions (HL API)"""
         File2 = File.File(self.output_tempfile, mode = "w", header = self.File1.header)
-        File2.define_new_dimension("test_dimension", 5, "This is a test.")
-        File2.define_new_dimension("test_dimension2", 5, "This is a test.")
+        File2.define_new_dimension(b"test_dimension", 5, b"This is a test.")
+        File2.define_new_dimension(b"test_dimension2", 5, b"This is a test.")
 
         File2.X = self.File1.X
         self.assertTrue(File2.test_dimension[500] == 0)

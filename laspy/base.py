@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 import mmap
 import laspy
 import os
@@ -113,7 +114,7 @@ class DataProvider():
         extra_bytes VLR record.'''
         if type(self._mmap) == bool:
             self.map()
-        self.pointfmt = np.dtype([("point", zip([x.name for x in informat.specs],
+        self.pointfmt = np.dtype([(b"point", zip([x.name for x in informat.specs],
                                 [x.np_fmt for x in informat.specs]))])
         if not self.manager.header.version in ("1.3", "1.4"):
             _pmap = np.frombuffer(self._mmap, self.pointfmt,
@@ -129,8 +130,11 @@ class DataProvider():
         '''Create the numpy point map based on the point format.'''
         if type(self._mmap) == bool:
             self.map()
-        self.pointfmt = np.dtype([("point", zip([x.name for x in self.manager.point_format.specs],
-                                [x.np_fmt for x in self.manager.point_format.specs]))])
+        # this is not great. I believe this function wants str on 2.x and unicode on 3.x
+        # for now, using bytes.
+        dtype = zip([x.name.encode('ascii') for x in self.manager.point_format.specs],
+                                        [x.np_fmt.encode('ascii') for x in self.manager.point_format.specs])
+        self.pointfmt = np.dtype([(b"point", dtype)])
         if not self.manager.header.version in ("1.3", "1.4"):
             self._pmap = np.frombuffer(self._mmap, self.pointfmt,
                         offset = self.manager.header.data_offset)
@@ -1121,7 +1125,7 @@ class Writer(FileManager):
                 self.populate_evlrs()
         else:
             # There are no current extra dimensions.
-            new_vlr = laspy.header.VLR(user_id = "LASF_Spec", record_id = 4, VLR_body = new_dimension.to_byte_string())
+            new_vlr = laspy.header.VLR(user_id = b"LASF_Spec", record_id = 4, VLR_body = new_dimension.to_byte_string())
             old_vlrs.append(new_vlr)
             self.extra_dimensions = [new_dimension]
 
@@ -1250,7 +1254,7 @@ class Writer(FileManager):
                                 str(dim.num) +", received " + str(dimlen) ))
         def f(x):
             try:
-                outbyte = struct.pack(dim.fmt, val[x])
+                outbyte = struct.pack(dim.fmt, val[x].encode('utf-8'))
             except:
                 outbyte = struct.pack(dim.fmt, int(val[x]))
             self.data_provider._mmap[(x*dim.length + rec_offs +
