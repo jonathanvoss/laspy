@@ -8,6 +8,7 @@ from laspy import util
 import struct
 import copy
 import numpy as np
+from laspy.compat import *
 
 def leap_year(year):
     if ((year % 4) != 0):
@@ -111,9 +112,24 @@ class ParseableVLR():
             self.body_fmt.add("digitizer_offset", "ctypes.c_double",1)
 
         if self.body_fmt != None:
-            self.parsed_body = np.array(struct.unpack(self.body_fmt.pt_fmt_long, self.VLR_body))
+            self.parsed_body = list(struct.unpack(self.body_fmt.pt_fmt_long, self.VLR_body))
         else:
             self.parsed_body = None
+
+    def pack(self, name, val):
+        '''Pack a VLR field into bytes.'''
+        spec = self.fmt.lookup[name]
+        if spec.num == 1:
+            return struct.pack(spec.fmt, val)
+        type_ = spec.fmt[1]
+        fmt = '%s%i%s' % (spec.fmt[0], len(val), spec.fmt[1])
+        try:
+            if type_ in 's':
+                return struct.pack(fmt, val)
+            else:
+                return struct.pack(fmt, *val)
+        except:
+            raise Exception(spec.fmt, val)
 
     def pack_data(self):
         '''Pack data from parsed_body into VLR_body.'''
@@ -144,10 +160,10 @@ class ExtraBytesStruct(object):
     lives in the VLR_body property of a laspy.header.VLR instance, and multiple
     ExtraByteStruct records can be present together. Each ExtraBytesStruct instance
     describes an additional dimension present at the end of each point record. '''
-    def __init__(self, data_type = 0, options = 0, name = b"\x00"*32,
+    def __init__(self, data_type = 0, options = 0, name = "\x00"*32,
                  unused = [0]*4, no_data = [0.0]*3, min = [0.0]*3,
                  max = [0.0]*3, scale = [1.0]*3, offset = [0.0]*3,
-                 description = b"\x00"*32):
+                 description = "\x00"*32):
         self.fmt = util.Format("extra_bytes_struct")
         self.packer = struct.Struct(self.fmt.pt_fmt_long)
         self.writeable = True
@@ -157,14 +173,14 @@ class ExtraBytesStruct(object):
         self.data = b"\x00"*192
         self.set_property("data_type" , data_type)
         self.set_property("options" , options)
-        self.set_property("name" , name + b"\x00"*(32-len(description)))
+        self.set_property("name" , name + "\x00"*(32-len(description)))
         self.set_property("unused" , unused )
         self.set_property("no_data" , no_data)
         self.set_property("min" , min)
         self.set_property("max" , max)
         self.set_property("scale" , scale )
         self.set_property("offset" , offset)
-        self.set_property("description" , description + b"\x00"*(32-len(description)))
+        self.set_property("description" , description + "\x00"*(32-len(description)))
 
     def build_from_vlr(self, vlr_parent, body_offset):
         self.writeable = False
@@ -193,8 +209,12 @@ class ExtraBytesStruct(object):
         unpacked = struct.unpack(fmt.full_fmt,
                    self.data[fmt.offs:(fmt.offs + fmt.length*fmt.num)])
         if len(unpacked) == 1:
-            return(unpacked[0])
-        return(unpacked)
+            unpacked = unpacked[0]
+        try:
+            unpacked = unpacked.decode('utf-8')
+        except:
+            pass
+        return unpacked
 
     def to_byte_string(self):
         '''Return the struct as a string of raw bytes. This is useful for providing
@@ -204,7 +224,9 @@ class ExtraBytesStruct(object):
     def set_property(self, name, value):
         self.assertWriteable()
         fmt = self.fmt.specs[self.get_property_idx(name)]
-        if isinstance(value, int) or isinstance(value, str):
+        if isinstance(value, int) or isinstance(value, str) or isinstance(value, bytes) or not onpy3 and isinstance(value, unicode):
+            if not isinstance(value, bytes) and not isinstance(value, int):
+                value = value.encode('utf-8')
             packed = struct.pack(fmt.full_fmt, value)
             self.data = self.data[0:fmt.offs] + packed + self.data[fmt.offs + len(packed):len(self.data)]
         else:
@@ -217,10 +239,9 @@ class ExtraBytesStruct(object):
             d1 = self.vlr_parent.VLR_body[0:idx_start]
             d2 = self.vlr_parent.VLR_body[idx_stop:len(self.vlr_parent.VLR_body)]
             self.vlr_parent.VLR_body = (d1 + self.data + d2)
-        return
 
     def get_reserved(self):
-        return(self.get_property("reserved"))
+        return self.get_property("reserved")
     def set_reserved(self, value):
         self.set_property("reserved", value)
     reserved = property(get_reserved, set_reserved, None, None)
@@ -285,7 +306,7 @@ class EVLR(ParseableVLR):
     def __init__(self, user_id, record_id, VLR_body, **kwargs):
         '''Build the EVLR using the required arguments user_id, record_id, and
         VLR_body. The user can also specify the reserved and description fields if desired.'''
-        self.user_id = str(user_id) + b"\x00"*(16-len(str(user_id)))
+        self.user_id = str(user_id).encode('utf-8') + b"\x00"*(16-len(str(user_id)))
         self.record_id = record_id
         self.VLR_body = VLR_body
         self.body_fmt = None
@@ -345,12 +366,6 @@ class EVLR(ParseableVLR):
         '''Return the size of the evlr object in bytes'''
         return self.rec_len_after_header + 60
 
-    def pack(self, name, val):
-        '''Pack an EVLR field into bytes.'''
-        spec = self.fmt.lookup[name]
-        if spec.num == 1:
-            return(struct.pack(spec.full_fmt, val))
-        return(struct.pack(spec.fmt[0]+spec.fmt[1]*len(val), *val))
 
     def to_byte_string(self):
         '''Pack the entire EVLR into a byte string.'''
@@ -378,7 +393,7 @@ class VLR(ParseableVLR):
     def __init__(self, user_id, record_id, VLR_body, **kwargs):
         '''Build the VLR using the required arguments user_id, record_id, and VLR_body
         the user can also specify the reserved and description fields here if desired.'''
-        self.user_id = str(user_id) + b"\x00"*(16-len(str(user_id)))
+        self.user_id = str(user_id).encode('utf-8') + b"\x00"*(16-len(str(user_id)))
         self.record_id = record_id
         self.VLR_body = VLR_body
         self.type = 0
@@ -438,7 +453,7 @@ class VLR(ParseableVLR):
                 self.add_extra_dim(new_rec)
 
     def add_extra_dim(self, new_rec):
-        new_name = new_rec.name.replace(b"\x00", b"").replace(" ", "_").lower()
+        new_name = new_rec.name.replace("\x00", "").replace(" ", "_").lower()
         self.__dict__[new_name] = new_rec
         self.extra_dimensions.append(new_rec)
 
@@ -447,12 +462,6 @@ class VLR(ParseableVLR):
         '''Return the size of the vlr object in bytes'''
         return self.rec_len_after_header + 54
 
-    def pack(self, name, val):
-        '''Pack a VLR field into bytes.'''
-        spec = self.fmt.lookup[name]
-        if spec.num == 1:
-            return(struct.pack(spec.fmt, val))
-        return(struct.pack(spec.fmt[0]+spec.fmt[1]*len(val), *val))
 
     def to_byte_string(self):
         '''Pack the entire VLR into a byte string.'''
@@ -717,7 +726,7 @@ class HeaderManager(object):
         return self.get_projectid()
 
     def set_guid(self, value):
-        raw_bytes = uuid.UUID.get_bytes_le(value)
+        raw_bytes = value.bytes_le
         p1 = raw_bytes[0:4]
         p2 = raw_bytes[4:6]
         p3 = raw_bytes[6:8]
@@ -1017,8 +1026,8 @@ class HeaderManager(object):
 
     def update_histogram(self):
         '''Update the histogram of returns by number'''
-        rawdata = map(lambda x: (x==0)*1 + (x!=0)*x,
-                     self.writer.get_return_num())
+        rawdata = [(x==0)*1 + (x!=0)*x for x in
+                     self.writer.get_return_num()]
         #if self.version == "1.3":
         #    histDict = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0}
         #elif self.version in ["1.0", "1.1", "1.2"]:

@@ -7,6 +7,7 @@ from laspy import util
 from laspy import header
 import copy
 import os
+from laspy.compat import *
 
 class File(object):
     ''' Base file object in laspy. Provides access to most laspy functionality,
@@ -79,6 +80,7 @@ class File(object):
                 self._header = self._reader.get_header()
             else:
                 raise util.LaspyException("Headers must currently be stored in the file, you provided: " + str(self._header))
+                # vvv unreachable vvv
                 self._reader = base.Reader(self.filename, mode = self._mode, header=self._header)
 
             if self.in_srs:
@@ -484,11 +486,10 @@ class File(object):
     scan_angle_rank = property(get_scan_angle_rank, set_scan_angle_rank,None,None)
 
     def get_user_data(self):
-        return(self._reader.get_user_data())
+        return self._reader.get_user_data()
     def set_user_data(self, data):
         self.assertWriteMode()
         self._writer.set_user_data(data)
-        return
 
     user_data = property(get_user_data, set_user_data, None, None)
 
@@ -506,7 +507,6 @@ class File(object):
     def set_gps_time(self, data):
         self.assertWriteMode()
         self._writer.set_gps_time(data)
-        return
 
     gps_time = property(get_gps_time, set_gps_time, None, None)
 
@@ -616,7 +616,7 @@ class File(object):
     z_t = property(get_z_t, set_z_t, None, None)
 
     def get_extra_bytes(self):
-        return(self._reader.get_extra_bytes())
+        return self._reader.get_extra_bytes()
     def set_extra_bytes(self, new):
         self.assertWriteMode()
         self._writer.set_extra_bytes(new)

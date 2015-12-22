@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import ctypes
 import struct
+from laspy.compat import *
 
 
 try: import elementtree.ElementTree as etree
@@ -25,7 +26,7 @@ LEfmt = {"ctypes.c_long":"<l","ctypes.c_ulong":"<L", "ctypes.c_ushort":"<H", "ct
 npFmt = {"<l":"i4", "<L":"u4", "<h":"i2","<H":"u2", "<B":"u1", "<f":"f4", "<s":"S1", "<d":"f8", "<Q":"u8", "<b":"i1"}
 
 
-defaults = {"<L":0,"<l":0, "<H":0, "<h":0, "<B": b"0", "<b":b"0", "<f":0.0, "<s":" ", "<d":0.0, "<Q":0}
+defaults = {"<L":0,"<l":0, "<H":0, "<h":0, "<B":"0", "<b":"0", "<f":0.0, "<s":" ", "<d":0.0, "<Q":0}
 
 edim_fmt_dict = {
     1:("ctypes.c_ubyte",1),
@@ -60,10 +61,10 @@ edim_fmt_dict = {
     30:("ctypes.c_double",3)
     }
 
-class Spec():
+class Spec(object):
     '''Holds information about how to read and write a particular field.
         These are usually created by :obj:`laspy.util.Format` objects.'''
-    def __init__(self,name,offs, fmt, num, pack = False,ltl_endian = True, overwritable = True, idx = False):
+    def __init__(self, name, offs, fmt, num, pack=False, ltl_endian=True, overwritable=True, idx=False):
         '''Build the spec instance.'''
         if ltl_endian:
             self.name = name
@@ -78,17 +79,17 @@ class Spec():
             # Check if we need to do anything special to the numpy format
             if self.num > 1:
                 if self.fmt == "<s":
-                    self.np_fmt = "S"+str(self.num)
+                    self.np_fmt = "S" + str(self.num)
                 elif self.fmt == "<B":
                     self.np_fmt = "V" + str(num)
 
                 else:
                     ## We need a sub-array
                     self.np_fmt = str(self.num) + npFmt[self.fmt]
-            if self.num == 1 or type(defaults[self.fmt])== str:
-                self.default = defaults[self.fmt]*self.num
+            if self.num == 1 or self.fmt[1] in 'Bbs':
+                self.default = defaults[self.fmt] * self.num
             else:
-                self.default = [defaults[self.fmt]]*self.num
+                self.default = [defaults[self.fmt]] * self.num
             self.overwritable = overwritable
             self.idx = idx
         else:
@@ -339,18 +340,19 @@ class Format():
         else:
             last = self.specs[-1]
             offs = last.offs + last.num*fmtLen[last.fmt]
-        self.rec_len += num*fmtLen[LEfmt[fmt]]
-        self.specs.append(Spec(name, offs, fmt, num, pack, overwritable =  overwritable, idx = len(self.specs)))
-        self.pt_fmt_long +=(str(num) +  LEfmt[fmt][1])
+        self.rec_len += num * fmtLen[LEfmt[fmt]]
+        self.specs.append(Spec(name, offs, fmt, num, pack, overwritable=overwritable, idx=len(self.specs)))
+        self.pt_fmt_long += str(num) +  LEfmt[fmt][1]
 
         if self._etree != False:
             self._etree.append(self.specs[-1].etree())
+
     def xml(self):
         '''Return an XML Formatted string, describing all of the :obj:`laspy.util.Spec` objects belonging to the Format.'''
-        return(etree.tostring(self._etree))
+        return etree.tostring(self._etree)
     def etree(self):
         '''Return an XML etree object, describing all of the :obj:`laspy.util.Spec` objects belonging to the Format.'''
-        return(self._etree)
+        return self._etree
 
 
     def translate_extra_spec(self, extra_dim):
@@ -358,10 +360,10 @@ class Format():
             name = extra_dim.name.replace("\x00", "").replace(" ", "_").lower()
             fmt = "ctypes.c_ubyte"
             num = extra_dim.options
-            return((name, fmt, num))
+            return name, fmt, num
         else:
             spec = edim_fmt_dict[extra_dim.data_type]
-            return(extra_dim.name.replace("\x00", "").replace(" ", "_").lower(), spec[0], spec[1])
+            return extra_dim.name.replace("\x00", "").replace(" ", "_").lower(), spec[0], spec[1]
 
     def __getitem__(self, index):
         '''Provide slicing functionality: return specs[index]'''
@@ -373,7 +375,7 @@ class Format():
             step = index.step
         else:
             step = 1
-        return(self.specs[index.start:index.stop:step])
+        return self.specs[index.start:index.stop:step]
 
     def __iter__(self):
         '''Provide iterating functionality for spec in specs'''
@@ -424,7 +426,7 @@ class Point():
     def pack(self):
         '''Return a binary string representing the point data. Slower than
         :obj:`numpy.array.tostring`, which is used by :obj:`laspy.base.DataProvider`.'''
-        return(self.packer.pack(*self.unpacked))
+        return self.packer.pack(*self.unpacked)
 
 
 
