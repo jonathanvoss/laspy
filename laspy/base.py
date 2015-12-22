@@ -21,7 +21,7 @@ def read_compressed(filename):
     pathvar2 = any([os.path.isfile(x + "/laszip.exe")
             for x in os.environ["PATH"].split(os.pathsep)])
     if (not pathvar1 and not pathvar2):
-        raise(laspy.util.LaspyException("Laszip was not found on the system"))
+        raise laspy.util.LaspyException("Laszip was not found on the system")
 
     prc=subprocess.Popen(["laszip", "-olas", "-stdout", "-i", filename],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
@@ -69,7 +69,7 @@ class FakeMmap(object):
     def read(self, nbytes):
         out = self.view[self.pos:self.pos+nbytes]
         self.pos += nbytes
-        return(out)
+        return out
 
     def tell(self):
         return self.pos
@@ -414,7 +414,7 @@ class FileManager():
 
     def read(self, bytes):
         '''Wrapper for mmap.mmap read function'''
-        return(self.data_provider._mmap.read(bytes))
+        return self.data_provider._mmap.read(bytes)
 
     def reset(self):
         '''Refresh the mmap and fileref'''
@@ -441,7 +441,7 @@ class FileManager():
         else:
             raise laspy.util.LaspyException("Invalid source: " + str(rec_type))
         dim = source.lookup[name]
-        return(self._read_words(dim.fmt, dim.num, dim.length))
+        return self._read_words(dim.fmt, dim.num, dim.length)
 
     def _read_words(self, fmt, num, bytes):
         '''Read a consecutive sequence of packed binary data, return a single
@@ -451,14 +451,14 @@ class FileManager():
             dat = self.read(bytes)
             outData.append(struct.unpack(fmt, dat)[0])
         if len(outData) > 1:
-            return(outData)
-        return(outData[0])
+            return outData
+        return outData[0]
 
     def _pack_words(self, fmt, num, bytes, val):
         if num == 1:
-            return(struct.pack(fmt, val))
+            return struct.pack(fmt, val)
         outData = "".join([struct.pack(fmt, val[i]) for i in xrange(num)])
-        return(outData)
+        return outData
 
 
     def grab_file_version(self):
@@ -467,7 +467,7 @@ class FileManager():
         v1 = self._read_words("<B", 1, 1)
         v2 = self._read_words("<B", 1, 1)
         self.seek(0, rel = False)
-        return(str(v1) +"." +  str(v2))
+        return '%i.%i' % (v1, v2)
 
     def get_header(self, file_version = 1.2):
         '''Return the header object, or create one if absent.'''
@@ -519,20 +519,20 @@ class FileManager():
     def get_vlrs(self):
         '''Populate and return list of :obj:`laspy.header.VLR` objects`.'''
         try:
-            return(self.vlrs)
+            return self.vlrs
         except:
             self.populate_vlrs()
-            return(self.vlrs)
+            return self.vlrs
 
     def push_vlrs(self):
         self.set_vlrs(self.vlrs)
 
     def get_evlrs(self):
         try:
-            return(self.evlrs)
+            return self.evlrs
         except:
             self.populate_evlrs()
-            return(self.evlrs)
+            return self.evlrs
 
     def get_padding(self):
         '''Return the padding between the end of the VLRs and the beginning of
@@ -551,8 +551,7 @@ class FileManager():
 
     def get_raw_point_index(self,index):
         '''Return the byte index of point number index'''
-        return(self.header.data_offset +
-            index*self.header.data_record_length)
+        return self.header.data_offset + index*self.header.data_record_length
 
     def get_points(self):
         '''Return a numpy array of all point data in a file.'''
@@ -560,22 +559,11 @@ class FileManager():
             return None
         if type(self.point_refs) == bool:
             self.build_point_refs()
-        #single_fmt = self.point_format.pt_fmt_long[1:]
-        #fmtlen = len(single_fmt)
-        #big_fmt_string = "".join(["<", single_fmt*self.header.point_records_count])
-        #pts =  unpack(big_fmt_string, self.data_provider._mmap[self.header.data_offset:self.data_provider._mmap.size()])
-        #return((laspy.util.Point(self, unpacked_list = pts[fmtlen*i:fmtlen*(i+1)]) for i in xrange(self.header.point_records_count)))
-        #return([laspy.util.Point(self,x) for x in self._get_raw_dimension(0, self.header.data_record_length)])
-        #return((x[0] for x in self.data_provider._pmap))
-        return(self.data_provider._pmap)
+        return self.data_provider._pmap
 
     def get_raw_point(self, index):
         '''Return the raw bytestring associated with point of number index'''
-        #start = (self.header.data_offset +
-        #    index * self.header.data_record_length)
-        #return(self.data_provider._mmap[start : start +
-        #     self.header.data_record_length])
-        return(self.data_provider._pmap[index][0].tostring())
+        return self.data_provider._pmap[index][0].tostring()
 
 
 #self, reader, startIdx ,version
@@ -584,7 +572,7 @@ class FileManager():
         if index >= self.get_pointrecordscount():
             return
         self._current = index
-        return(laspy.util.Point(self, self.get_raw_point(index), nice= nice))
+        return laspy.util.Point(self, self.get_raw_point(index), nice= nice)
 
 
     def get_next_point(self):
@@ -610,8 +598,6 @@ class FileManager():
         reader.point_format for the required Spec instance.'''
         if not self.has_point_records:
             return None
-        #if type(self.point_refs) == bool:
-        #    self.build_point_refs()
         if type(self.data_provider._pmap) == bool:
             self.data_provider.point_map()
         spec = self.point_format.lookup[name]
@@ -627,14 +613,8 @@ class FileManager():
         packer = self.c_packers[fmt]
         return (packer.unpack(_mmap[x:x+length])[0] for x in prefs)
 
-
-
-
     def _get_raw_dimension(self,spec):
         '''Return point dimension of specified offset format and length'''
-        #_mmap = self.data_provider._mmap
-        #prefs = (offs + x for x in self.point_refs)
-        #return((_mmap[start + offs : start+offs+length] for start in prefs))
         return self.data_provider._pmap["point"][spec.name].tostring()
 
     def _get_raw_datum(self, rec_offs, spec):
@@ -683,36 +663,36 @@ class FileManager():
 
     def get_x(self, scale=False):
         if not scale:
-            return(self.get_dimension("X"))
-        return(self.get_dimension("X")*self.header.scale[0] + self.header.offset[0])
+            return self.get_dimension("X")
+        return self.get_dimension("X")*self.header.scale[0] + self.header.offset[0]
 
     def get_y(self, scale=False):
         if not scale:
-            return(self.get_dimension("Y"))
-        return(self.get_dimension("Y")*self.header.scale[1] + self.header.offset[1])
+            return self.get_dimension("Y")
+        return self.get_dimension("Y")*self.header.scale[1] + self.header.offset[1]
 
     def get_z(self, scale=False):
         if not scale:
-            return(self.get_dimension("Z"))
-        return(self.get_dimension("Z")*self.header.scale[2] + self.header.offset[2])
+            return self.get_dimension("Z")
+        return self.get_dimension("Z")*self.header.scale[2] + self.header.offset[2]
 
     def get_intensity(self):
-        return(self.get_dimension("intensity"))
+        return self.get_dimension("intensity")
 
     def get_flag_byte(self):
-        return(self.get_dimension("flag_byte"))
+        return self.get_dimension("flag_byte")
 
     def get_raw_classification_flags(self):
-        return(self.get_dimension("classification_flags"))
+        return self.get_dimension("classification_flags")
 
     def get_classification_flags(self):
         if not self.header.data_format_id in (6,7,8,9,10):
-            return(self.get_classification())
+            return self.get_classification()
         rawDim = self.get_raw_classification_flags()
         return self.bit_transform(rawDim, 0, 4)
 
     def get_classification_byte(self):
-        return(self.get_dimension("classification_byte"))
+        return self.get_dimension("classification_byte")
 
     def get_return_num(self):
         rawDim = self.get_flag_byte()
@@ -749,13 +729,13 @@ class FileManager():
         return self.bit_transform(rawDim, 7, 8)
 
     def get_raw_classification(self):
-        return(self.get_dimension("raw_classification"))
+        return self.get_dimension("raw_classification")
 
     def get_classification(self):
         if self.header.data_format_id in (0,1,2,3,4,5):
             return self.bit_transform(self.get_raw_classification(), 0, 5)
         elif self.header.data_format_id in (6,7,8,9,10):
-            return(self.get_dimension("classification_byte"))
+            return self.get_dimension("classification_byte")
 
     def get_synthetic(self):
         if self.header.data_format_id in (6,7,8,9,10):
@@ -782,51 +762,51 @@ class FileManager():
             raise laspy.util.LaspyException("Overlap only present in point formats > 5.")
 
     def get_scan_angle_rank(self):
-        return(self.get_dimension("scan_angle_rank"))
+        return self.get_dimension("scan_angle_rank")
 
     def get_user_data(self):
-        return(self.get_dimension("user_data"))
+        return self.get_dimension("user_data")
 
     def get_pt_src_id(self):
-        return(self.get_dimension("pt_src_id"))
+        return self.get_dimension("pt_src_id")
 
     def get_gps_time(self):
-        return(self.get_dimension("gps_time"))
+        return self.get_dimension("gps_time")
 
     def get_red(self):
-        return(self.get_dimension("red"))
+        return self.get_dimension("red")
 
     def get_green(self):
-        return(self.get_dimension("green"))
+        return self.get_dimension("green")
 
     def get_blue(self):
-        return(self.get_dimension("blue"))
+        return self.get_dimension("blue")
 
 
     def get_nir(self):
-        return(self.get_dimension("nir"))
+        return self.get_dimension("nir")
 
 
     def get_wave_packet_desc_index(self):
-        return(self.get_dimension("wave_packet_desc_index"))
+        return self.get_dimension("wave_packet_desc_index")
 
     def get_byte_offset_to_waveform_data(self):
-        return(self.get_dimension("byte_offset_to_waveform_data"))
+        return self.get_dimension("byte_offset_to_waveform_data")
 
     def get_waveform_packet_size(self):
-        return(self.get_dimension("waveform_packet_size"))
+        return self.get_dimension("waveform_packet_size")
 
     def get_return_point_waveform_loc(self):
-        return(self.get_dimension("return_point_waveform_loc"))
+        return self.get_dimension("return_point_waveform_loc")
 
     def get_x_t(self):
-        return(self.get_dimension("x_t"))
+        return self.get_dimension("x_t")
 
     def get_y_t(self):
-        return(self.get_dimension("y_t"))
+        return self.get_dimension("y_t")
 
     def get_z_t(self):
-        return(self.get_dimension("z_t"))
+        return self.get_dimension("z_t")
 
     def get_extra_bytes(self):
         if "extra_bytes" in self.point_format.lookup.keys():
@@ -914,9 +894,9 @@ class Writer(FileManager):
             self.populate_evlrs()
 
         else:
-            raise(laspy.util.LaspyException("set_evlrs requires the file to be opened in a " +
+            raise laspy.util.LaspyException("set_evlrs requires the file to be opened in a " +
                 "write mode, and must be performed before point information is provided." +
-                "Try closing the file and opening it in rw mode. "))
+                "Try closing the file and opening it in rw mode. ")
 
     def save_vlrs(self):
         self.set_vlrs(self.vlrs)
@@ -980,7 +960,6 @@ class Writer(FileManager):
             for vlr in value:
                 self.data_provider._mmap.write(vlr.to_byte_string())
             self.populate_vlrs()
-            return
         else:
             current_size = self.data_provider._mmap.size()
             current_padding = self.get_padding()
@@ -1037,12 +1016,12 @@ class Writer(FileManager):
             self.data_provider.fileref.write(dat_part_2)
             self.data_provider.close()
             self.__init__(self.data_provider.filename, self.mode)
-            return(len(self.data_provider._mmap))
+            return len(self.data_provider._mmap)
         elif self.mode == "r+":
             pass
         else:
-            raise(laspy.util.LaspyException("Must be in write mode to change padding."))
-        return(len(self.data_provider._mmap))
+            raise laspy.util.LaspyException("Must be in write mode to change padding.")
+        return len(self.data_provider._mmap)
 
     def pad_file_for_point_recs(self,num_recs):
         '''Pad the file with null bytes out to a calculated length based on
@@ -1061,7 +1040,6 @@ class Writer(FileManager):
             self.data_provider.remap(flush = False, point_map = True)
             # Write Phase complete, enter rw mode?
             self.padded = num_recs
-            return
         else:
             d1 = self.data_provider._mmap[0:self.header.data_offset]
             d2 = self.data_provider._mmap[self.header.data_offset:self.data_provider._mmap.size()]
@@ -1231,7 +1209,6 @@ class Writer(FileManager):
         , appropriate spec object, and a new value. Uses raw bytes.'''
         self.data_provider._mmap[rec_offs+spec.offs:rec_offs+spec.offs +
                   spec.num*spec.length] = val
-        return
 
     def _set_datum(self, rec_offs, dim, val):
         '''Set a non dimension field as with _set_raw_datum, but supply a formatted value'''
@@ -1288,11 +1265,10 @@ class Writer(FileManager):
         '''Wrapper for _set_datum, accepting name of header property and formatted value'''
         dim = self.header_format.lookup[name]
         if not dim.overwritable:
-            raise(laspy.util.LaspyException("Field " + dim.name + " is not overwritable."))
+            raise laspy.util.LaspyException("Field " + dim.name + " is not overwritable.")
 
         self._set_datum(0, dim, value)
         self.header_changes.add(name)
-        return
 
     def set_header(self, header):
         raise NotImplementedError
@@ -1311,7 +1287,6 @@ class Writer(FileManager):
             return
 
         self.set_dimension("X", np.round((X - self.header.offset[0])/self.header.scale[0]))
-        return
 
     def set_y(self,Y, scale = False):
         '''Wrapper for set_dimension("Y", new_dimension)'''
@@ -1319,7 +1294,6 @@ class Writer(FileManager):
             self.set_dimension("Y", Y)
             return
         self.set_dimension("Y", np.round((Y - self.header.offset[1])/self.header.scale[1]))
-        return
 
     def set_z(self, Z, scale = False):
         '''Wrapper for set_dimension("Z", new_dimension)'''
@@ -1327,17 +1301,14 @@ class Writer(FileManager):
             self.set_dimension("Z", Z)
             return
         self.set_dimension("Z", np.round((Z-self.header.offset[2])/self.header.scale[2]))
-        return
 
     def set_intensity(self, intensity):
         '''Wrapper for set_dimension("intensity", new_dimension)'''
         self.set_dimension("intensity", intensity)
-        return
 
     def set_flag_byte(self, byte):
         '''Wrapper for set_dimension("flag_byte", new_dimension)'''
         self.set_dimension("flag_byte", byte)
-        return
 
     # Utility Functions, refactor
 
@@ -1390,7 +1361,6 @@ class Writer(FileManager):
             self.raise_if_overflow(num, 4)
             outByte = self.bitpack((num,flag_byte), ((0,4), (4,8)))
             self.set_dimension("flag_byte", outByte)
-        return
 
     def set_num_returns(self, num):
         '''Set the binary field num_returns in the flag_byte'''
@@ -1405,7 +1375,6 @@ class Writer(FileManager):
             self.raise_if_overflow(num, 4)
             outByte = self.bitpack((flag_byte, num), ((0,4), (4,8)))
             self.set_dimension("flag_byte", outByte)
-        return
 
     def set_scanner_channel(self, value):
         if not self.header.data_format_id in (6,7,8,9,10):
@@ -1429,7 +1398,6 @@ class Writer(FileManager):
             outByte = self.bitpack((flag_byte,flag,flag_byte),
                 ((0,6),(0,1), (7,8)))
             self.set_dimension("classification_flags", outByte)
-        return
 
     def set_edge_flight_line(self, line):
         '''Set the binary field edge_flight_line in the flag_byte'''
@@ -1443,7 +1411,6 @@ class Writer(FileManager):
             self.raise_if_overflow(line, 1)
             outByte = self.bitpack((raw_dim, line), ((0,7), (0,1)))
             self.set_dimension("classification_flags", outByte)
-        return
 
     def set_classification_byte(self, value):
         self.set_dimension("classification_byte", value)
@@ -1459,7 +1426,6 @@ class Writer(FileManager):
         self.raise_if_overflow(value, 4)
         outbyte = self.bitpack((value, rawDim), ((0,4), (4,8)))
         self.set_raw_classification_flags(outbyte)
-        return
 
     def set_raw_classification(self, classification):
         '''Set the entire classification byte at once. This is faster than setting the binary fields individually,
@@ -1477,7 +1443,6 @@ class Writer(FileManager):
             self.set_raw_classification(out_byte)
         elif self.header.data_format_id in (6,7,8,9,10):
             self.set_dimension("classification_byte", classification)
-        return
 
     def set_synthetic(self, synthetic):
         '''Set the binary field synthetic inside the raw classification byte'''
@@ -1493,7 +1458,6 @@ class Writer(FileManager):
             out_byte = self.bitpack((class_byte, synthetic, class_byte),
                                    ((0,5), (0,1), (6,8)))
             self.set_dimension("raw_classification", out_byte)
-        return
 
     def set_key_point(self, pt):
         '''Set the binary key_point field inside the raw classification byte'''
@@ -1508,7 +1472,6 @@ class Writer(FileManager):
             out_byte = self.bitpack((class_byte, pt, class_byte),
                                 ((0,6),(0,1),(7,8)))
             self.set_dimension("raw_classification", out_byte)
-        return
 
     def set_withheld(self, withheld):
         '''Set the binary field withheld inside the raw classification byte'''
@@ -1523,7 +1486,6 @@ class Writer(FileManager):
             out_byte = self.bitpack((class_byte, withheld),
                                  ((0,7), (0,1)))
             self.set_dimension("raw_classification", out_byte)
-        return
 
     def set_overlap(self, overlap):
         '''Set the binary field withheld inside the raw classification byte'''
@@ -1534,23 +1496,19 @@ class Writer(FileManager):
             self.set_raw_classification_flags(outbyte)
         else:
             raise laspy.util.LaspyException("Overlap only present in point formats > 5.")
-        return
 
 
     def set_scan_angle_rank(self, rank):
         '''Wrapper for set_dimension("scan_angle_rank")'''
         self.set_dimension("scan_angle_rank", rank)
-        return
 
     def set_user_data(self, data):
         '''Wrapper for set_dimension("user_data")'''
         self.set_dimension("user_data", data)
-        return
 
     def set_pt_src_id(self, data):
         '''Wrapper for set_dimension("pt_src_id")'''
         self.set_dimension("pt_src_id", data)
-        return
 
     def set_gps_time(self, data):
         '''Wrapper for set_dimension("gps_time")'''

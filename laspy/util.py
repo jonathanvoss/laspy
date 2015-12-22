@@ -93,7 +93,7 @@ class Spec(object):
             self.overwritable = overwritable
             self.idx = idx
         else:
-            raise(LaspyException("Big endian files are not currently supported."))
+            raise LaspyException("Big endian files are not currently supported.")
     def etree(self):
         spec = etree.Element("spec")
         name = etree.SubElement(spec, "name")
@@ -102,10 +102,10 @@ class Spec(object):
         fmt.text = str(self.Format)
         num = etree.SubElement(spec, "number")
         num.text = str(self.num)
-        return(spec)
+        return spec
 
     def xml(self):
-        return(etree.tostring(self.etree()))
+        return etree.tostring(self.etree())
 
 ### Note: ctypes formats may behave differently across platforms.
 ### Those specified here follow the bytesize convention given in the
