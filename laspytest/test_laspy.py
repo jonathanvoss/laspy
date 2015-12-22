@@ -9,10 +9,7 @@ import laspy.header as header
 from uuid import UUID
 import unittest
 import os
-
 import shutil
-def flip_bit(x):
-    return(1*(x==0))
 
 
 class LasReaderTestCase(unittest.TestCase):
@@ -193,7 +190,7 @@ class LasWriterTestCase(unittest.TestCase):
         x = [i + 1 for i in self.FileObject.X]
         self.FileObject.X = x
         x2 = self.FileObject.get_x()
-        self.assertTrue((list(x) == list(x2)))
+        self.assertEqual(list(x), list(x2))
         scaled_x = self.FileObject.x
         self.FileObject.x = scaled_x
         self.assertTrue(all(scaled_x == self.FileObject.x))
@@ -203,7 +200,7 @@ class LasWriterTestCase(unittest.TestCase):
         y = [i + 1 for i in self.FileObject.Y]
         self.FileObject.Y = y
         y2 = self.FileObject.get_y()
-        self.assertTrue((list(y) == list(y2)))
+        self.assertEqual(list(y), list(y2))
         scaled_y = self.FileObject.y
         self.FileObject.y = scaled_y
         self.assertTrue(all(scaled_y == self.FileObject.y))
@@ -213,7 +210,7 @@ class LasWriterTestCase(unittest.TestCase):
         z = [i + 1 for i in self.FileObject.Z ]
         self.FileObject.Z = z
         z2 = self.FileObject.get_z()
-        self.assertTrue((list(z) == list(z2)))
+        self.assertEqual(list(z), list(z2))
         scaled_z = self.FileObject.z
         self.FileObject.z = scaled_z
         self.assertTrue(all(scaled_z == self.FileObject.z))
@@ -223,13 +220,13 @@ class LasWriterTestCase(unittest.TestCase):
         i = [i + 1 for i in self.FileObject.intensity]
         self.FileObject.intensity = i
         i2 = self.FileObject.intensity
-        self.assertTrue((i == list(i2)))
+        self.assertEqual(i, list(i2))
     def test_return_num(self):
         """Writing and testing return_num dimension"""
         rn = [i + 1 for i in self.FileObject.return_num]
         self.FileObject.return_num = rn
         rn2 = self.FileObject.get_return_num()
-        self.assertTrue((rn == list(rn2)))
+        self.assertEqual(rn, list(rn2))
     def test_overflow_return_num(self):
         """Testing overflow handling"""
         rn = [x + 100000 for x in self.FileObject.return_num]
@@ -240,128 +237,93 @@ class LasWriterTestCase(unittest.TestCase):
         nr = [i + 1 for i in self.FileObject.num_returns]
         self.FileObject.num_returns = nr
         nr2 = self.FileObject.get_num_returns()
-        self.assertTrue((nr == list(nr2)))
+        self.assertEqual(nr, list(nr2))
     def test_scan_dir_flag(self):
         """Writing and testing scan_dir_flag dimension"""
-        sdf = [flip_bit(x) for x in self.FileObject.scan_dir_flag]
+        sdf = [not x for x in self.FileObject.scan_dir_flag]
         self.FileObject.scan_dir_flag = sdf
         sdf2 = self.FileObject.get_scan_dir_flag()
-        self.assertTrue((sdf == list(sdf2)))
+        self.assertEqual(sdf, list(sdf2))
     def test_edge_flight_line(self):
         """Writing and testing edge_flight_line dimension"""
-        efl = [flip_bit(x) for x in self.FileObject.edge_flight_line]
+        efl = [not x for x in self.FileObject.edge_flight_line]
         self.FileObject.edge_flight_line = efl
         efl2 = self.FileObject.get_edge_flight_line()
-        self.assertTrue((efl == list(efl2)))
+        self.assertEqual(efl, list(efl2))
     def test_classification(self):
         """Writing and testing classification byte."""
         c1 = [x + 1 for x in self.FileObject.classification]
         self.FileObject.classification = c1
         c2 = [x for x in self.FileObject.get_classification()]
-        self.assertTrue((c1 == c2))
+        self.assertEqual(c1, c2)
     def test_synthetic(self):
         """Writing and testing synthetic"""
-        s1 = [flip_bit(x) for x in self.FileObject.synthetic]
+        s1 = [not x for x in self.FileObject.synthetic]
         self.FileObject.synthetic = s1
         s2 = self.FileObject.get_synthetic()
-        self.assertTrue((s1 == list(s2)))
+        self.assertEqual(s1, list(s2))
     def test_key_point(self):
         """Writing and testing key point"""
-        k1 = [flip_bit(x) for x in self.FileObject.key_point]
+        k1 = [not x for x in self.FileObject.key_point]
         self.FileObject.key_point = k1
         k2 = self.FileObject.get_key_point()
-        self.assertTrue((k1 == list(k2)))
+        self.assertEqual(k1, list(k2))
     def test_withheld(self):
         """Writing and testing withheld"""
-        w1 = [flip_bit(x) for x in self.FileObject.withheld]
+        w1 = [not x for x in self.FileObject.withheld]
         self.FileObject.withheld = w1
         w2 = self.FileObject.get_withheld()
-        self.assertTrue((w1 == list(w2)))
+        self.assertEqual(w1, list(w2))
     def test_scan_angle_rank(self):
         """Writing and testing scan angle rank"""
         ar1 = [i-1 for i in self.FileObject.scan_angle_rank]
         ar1 = [max(0, x) for x in ar1]
         self.FileObject.scan_angle_rank = ar1
         ar2 = self.FileObject.get_scan_angle_rank()
-        self.assertTrue((ar1 == list(ar2)))
+        self.assertEqual(ar1, list(ar2))
     def test_user_data(self):
         """Writing and testing user data"""
         ud1 = [i+1 for i in self.FileObject.user_data]
         self.FileObject.user_data = ud1
         ud2 = self.FileObject.get_user_data()
-        self.assertTrue((ud1 == list(ud2)))
+        self.assertEqual(ud1, list(ud2))
     def test_pt_src_id(self):
         """Writing and testing point source id"""
         p1 = [i+1 for i in self.FileObject.user_data]
         self.FileObject.user_data = p1
         p2 = self.FileObject.get_user_data()
-        self.assertTrue((p1 == list(p2)))
+        self.assertEqual(p1, list(p2))
     def test_gps_time(self):
         """Writing and testing gps time"""
         g1 = [i+1 for i in self.FileObject.gps_time]
         self.FileObject.gps_time = g1
         g2 = self.FileObject.get_gps_time()
-        self.assertTrue((g1 == list(g2)))
+        self.assertEqual(g1, list(g2))
     def test_red(self):
         """Writing and testing red"""
         r1 = [i+1 for i in self.FileObject.red]
         self.FileObject.red = r1
         r2 = self.FileObject.get_red()
-        self.assertTrue((r1 == list(r2)))
+        self.assertEqual(r1, list(r2))
     def test_green(self):
         """Writing and testing green"""
         g1 = [i+1 for i in self.FileObject.green]
         self.FileObject.green = g1
         g2 = self.FileObject.get_green()
-        self.assertTrue((g1 == list(g2)))
+        self.assertEqual(g1, list(g2))
     def test_blue(self):
         """Writing and testing blue"""
         b1 =[i+1 for i in  self.FileObject.blue]
         self.FileObject.blue = b1
         b2 = self.FileObject.get_blue()
-        self.assertTrue((b1 == list(b2)))
+        self.assertEqual(b1, list(b2))
     def test_vlr_defined_dimensions2(self):
         """Testing VLR defined dimension API"""
         File2 = File.File(self.output_tempfile, mode = "w", header = self.FileObject.header)
         File2.define_new_dimension("test_dimension", 5, "This is a test.")
         File2.X = self.FileObject.X
-        self.assertTrue(File2.test_dimension[500] == 0)
+        self.assertEqual(File2.test_dimension[500], 0)
         File2.close(ignore_header_changes = True)
-    #def test_wave_pkt_descp_idx(self):
-    #    w1 = self.FileObject.wave_packet_descp_idx + 1
-    #    self.FileObject.wave_packet_descp_idx = w1
-    #    w2 = self.FileObject.get_wave_packet_descp_idx()
-    #    self.assertTrue((w1 = w2))
-    #def test_byte_offset(self):
-    #    b1 = self.FileObject.byte_offset_to_waveform_data + 1
-    #    self.FileObject.byte_offset_to_waveform_data = b1
-    #    b2 = self.FileObject.get_byte_offset_to_waveform_data
-    #    self.assertTrue((b1 == b2))
-    #def test_wavefm_pkt_size(self):
-    #    w1 = self.FileObject.waveform_pkt_size + 1
-    #    self.FileObject.waveform_pkt_size = w1
-    #    w2 = self.FileObject.get_waveform_pkt_size()
-    #    self.assertTrue((w1 == w2))
-    #def test_return_pt_wavefm_loc(self):
-    #    w1 = self.FileObject.return_point_waveform_loc + 1
-    #    self.FileObject.return_point_waveform_loc = w1
-    #    w2 = self.FileObject.get_return_point_waveform_loc
-    #    self.assertTrue((w1 == w2))
-    #def test_x_t(self):
-    #    x1 = self.FileObject.x_t + 1
-    #    self.FileObject.x_t = x1
-    #    x2 = self.FileObject.get_x_t()
-    #    self.assertTrue((x1 == x2))
-    #def test_y_t(self):
-    #    y1 = self.FileObject.y_t + 1
-    #    self.FileObject.y_t = y1
-    #    y2 = self.FileObject.get_y_t()
-    #    self.assertTrue((y1 == y2))
-    #def test_z_t(self):
-    #    z1 = self.FileObject.z_t + 1
-    #    self.FileObject.z_t = z
-    #    z2 = self.FileObject.get_z_t()
-    #    self.assertTrue((z1 == z2))
     def tearDown(self):
         self.FileObject.close()
         os.remove(self.tempfile)
@@ -381,7 +343,7 @@ class LasHeaderWriterTestCase(unittest.TestCase):
         f1 = self.FileObject.header.filesource_id + 1
         self.FileObject.header.filesource_id = f1
         f2 = self.FileObject.header.get_filesourceid()
-        self.assertTrue(f1 == f2)
+        self.assertEqual(f1, f2)
     def test_uuid(self):
         """Testing uuid"""
         guid = self.FileObject.header.guid
@@ -396,7 +358,7 @@ class LasHeaderWriterTestCase(unittest.TestCase):
         g1 = self.FileObject.header.global_encoding + 1
         self.FileObject.header.global_encoding = g1
         g2 = self.FileObject.header.get_global_encoding()
-        self.assertTrue(g1 == g2)
+        self.assertEqual(g1, g2)
     def test_versions(self):
         """Testing Versions"""
         v1 = self.FileObject.header.major_version
@@ -427,18 +389,18 @@ class LasHeaderWriterTestCase(unittest.TestCase):
         self.FileObject.header.set_padding(10)
         self.FileObject.header.set_padding(1000)
         x2 = list(self.FileObject.X)
-        self.assertTrue((list(x1) == list(x2)))
+        self.assertEqual(list(x1), list(x2))
     def test_data_offset(self):
         """Testing data offset"""
         x1 = list(self.FileObject.X )
         self.FileObject.header.data_offset = 400
         self.assertEqual(self.FileObject.header.get_dataoffset(), 400)
         x2 = list(self.FileObject.X)
-        self.assertTrue((list(x1) == list(x2)))
+        self.assertEqual(list(x1), list(x2))
     def test_date(self):
         """Testing Date"""
         d1 = self.FileObject.header.date
-        self.assertTrue(d1 == None)
+        self.assertEqual(d1, None)
         from datetime import datetime
         d2 = datetime(2007,12,10)
         self.FileObject.header.date = d2
@@ -464,27 +426,27 @@ class LasHeaderWriterTestCase(unittest.TestCase):
         self.FileObject.Z = z
         self.FileObject.header.update_min_max()
         file_max = self.FileObject.header.max
-        self.assertTrue(file_max == [self.FileObject.x[0], self.FileObject.y[0], self.FileObject.z[0]])
+        self.assertEqual(file_max, [self.FileObject.x[0], self.FileObject.y[0], self.FileObject.z[0]])
     def test_histogram(self):
         """Testing the update_histogram functon"""
         h1 = self.FileObject.header.point_return_count
         self.FileObject.header.update_histogram()
         h2 = self.FileObject.header.point_return_count
-        self.assertTrue(h1 == h2)
+        self.assertEqual(h1, h2)
     def test_offset(self):
         """Testing offset"""
         o1 = self.FileObject.header.offset
         o1[0] += 1
         self.FileObject.header.offset = o1
         o2 = self.FileObject.header.get_offset()
-        self.assertTrue(o1 == o2)
+        self.assertEqual(o1, o2)
     def test_scale(self):
         """Testing Scale"""
         s1 = self.FileObject.header.scale
         s1[0] += 1
         self.FileObject.header.scale = s1
         s2 = list(self.FileObject.header.get_scale())
-        self.assertTrue(s1 == s2)
+        self.assertEqual(s1, s2)
     def test_vlr_parsing_api(self):
         """Testing VLR body parsing api"""
         shutil.copyfile(self.simple14, self.tempfile2)
@@ -518,7 +480,7 @@ class LasWriteModeTestCase(unittest.TestCase):
 
         File2 = File.File(self.output_tempfile, mode = "w",
                             header = header_object)
-        self.assertTrue(File2.header.version == "1.2")
+        self.assertEqual(File2.header.version, "1.2")
 
         X = list(self.File1.X)
         Y = list(self.File1.Y)
@@ -526,9 +488,9 @@ class LasWriteModeTestCase(unittest.TestCase):
         File2.X = X
         File2.Y = Y
         File2.Z = Z
-        self.assertTrue((list(X) == list(File2.get_x())))
-        self.assertTrue((list(Y) == list(File2.get_y())))
-        self.assertTrue((list(Z) == list(File2.get_z())))
+        self.assertEqual(list(X), list(File2.get_x()))
+        self.assertEqual(list(Y), list(File2.get_y()))
+        self.assertEqual(list(Z), list(File2.get_z()))
         File2.close(ignore_header_changes = True)
 
     def test_using_existing_header(self):
@@ -542,9 +504,9 @@ class LasWriteModeTestCase(unittest.TestCase):
         File2.Z = Z
         File2.Y = Y
         File2.X = X
-        self.assertTrue((list(X) == list(File2.get_x())))
-        self.assertTrue((list(Y) == list(File2.get_y())))
-        self.assertTrue((list(Z) == list(File2.get_z())))
+        self.assertEqual(list(X), list(File2.get_x()))
+        self.assertEqual(list(Y), list(File2.get_y()))
+        self.assertEqual(list(Z), list(File2.get_z()))
         File2.close(ignore_header_changes = True)
 
     def test_format_change_and_extra_bytes(self):
@@ -580,7 +542,7 @@ class LasV_13TestCase(unittest.TestCase):
     def test_glob_encode(self):
         """Testing v1.3 Global Encoding"""
         old = self.File1.header.gps_time_type
-        self.assertTrue(old == '0')
+        self.assertEqual(old, '0')
         self.File1.header.gps_time_type = '1'
         self.assertEqual(self.File1.header.get_gps_time_type(), '1')
 
@@ -677,7 +639,7 @@ class LasV_14TestCase(unittest.TestCase):
     def test_glob_encode(self):
         """Testing v1.4 Global Encoding"""
         old = self.File1.header.gps_time_type
-        self.assertTrue(old == '0')
+        self.assertEqual(old, '0')
         self.File1.header.gps_time_type = '1'
         self.assertEqual(self.File1.header.get_gps_time_type(), '1')
 
@@ -700,7 +662,7 @@ class LasV_14TestCase(unittest.TestCase):
         File2.header.evlrs = outevlrs
         File2.close()
         File2 = File.File(self.output_tempfile, mode = "r")
-        self.assertTrue(len(File2.header.evlrs) == 50)
+        self.assertEqual(len(File2.header.evlrs), 50)
         File2.close(ignore_header_changes = True)
 
     def test_classification_variables(self):
@@ -752,7 +714,7 @@ class LasV_14TestCase(unittest.TestCase):
         File2._writer.set_dimension("test_dimension_9", [[1,2,3]]*len(self.File1))
         self.assertTrue(all(np.array([b"AAA"]*len(self.File1)) == File2.test_dimension_5678))
         self.assertTrue(all(np.array([4]*len(self.File1)) == File2.test_dimension_1234))
-        self.assertTrue(list(File2.test_dimension_9[100]) == [1,2,3])
+        self.assertEqual(list(File2.test_dimension_9[100]), [1,2,3])
         File2.close(ignore_header_changes = True)
 
 
@@ -785,7 +747,7 @@ class LasLazReaderTestCase(unittest.TestCase):
         """Testing ability to read laz files."""
         simple = './laspytest/data/simple.laz'
         File1 = File.File(simple, mode = "r")
-        self.assertTrue(len(File1.X) == 1065)
+        self.assertEqual(len(File1.X), 1065)
         File1.close()
 
     def tearDown(self):
