@@ -636,6 +636,11 @@ class LasV_14TestCase(unittest.TestCase):
         shutil.copyfile(self.simple, self.tempfile)
         self.File1 = File.File(self.tempfile, mode = "rw")
 
+    def test_vlr_read(self):
+        vlrs = self.File1.header.vlrs
+        self.assertEqual([vlr.record_id for vlr in vlrs], [34735, 34736])
+        self.assertEqual([vlr.user_id for vlr in vlrs], ['LASF_Projection', 'LASF_Projection'])
+
     def test_glob_encode(self):
         """Testing v1.4 Global Encoding"""
         old = self.File1.header.gps_time_type

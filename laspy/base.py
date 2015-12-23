@@ -446,10 +446,8 @@ class FileManager():
     def _read_words(self, fmt, num, bytes):
         '''Read a consecutive sequence of packed binary data, return a single
         element or list'''
-        outData = []
-        for i in xrange(num):
-            dat = self.read(bytes)
-            outData.append(struct.unpack(fmt, dat)[0])
+        dat = self.read(bytes*num)
+        outData = struct.unpack('%s%i%s' % (fmt[0], num, fmt[1]), dat)
         if len(outData) > 1:
             return outData
         return outData[0]
@@ -958,7 +956,10 @@ class Writer(FileManager):
 
             self.seek(self.header.header_size, rel = False)
             for vlr in value:
-                self.data_provider._mmap.write(vlr.to_byte_string())
+                try:
+                    self.data_provider._mmap.write(vlr.to_byte_string())
+                except:
+                    raise Exception(vlr.to_byte_string())
             self.populate_vlrs()
         else:
             current_size = self.data_provider._mmap.size()
@@ -1107,11 +1108,11 @@ class Writer(FileManager):
                 self.populate_evlrs()
         else:
             # There are no current extra dimensions.
-            new_vlr = laspy.header.VLR(user_id = b"LASF_Spec", record_id = 4, VLR_body = new_dimension.to_byte_string())
+            new_vlr = laspy.header.VLR(user_id="LASF_Spec", record_id=4, VLR_body=new_dimension.to_byte_string())
             old_vlrs.append(new_vlr)
             self.extra_dimensions = [new_dimension]
 
-            new_pt_fmt = laspy.util.Format(self.point_format.fmt, extradims = self.extra_dimensions)
+            new_pt_fmt = laspy.util.Format(self.point_format.fmt, extradims=self.extra_dimensions)
             self.point_format = new_pt_fmt
             self.set_header_property("data_record_length", self.point_format.rec_len)
             self.set_vlrs(old_vlrs)

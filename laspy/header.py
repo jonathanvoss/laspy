@@ -19,6 +19,8 @@ def leap_year(year):
         return False
     return True
 
+def pad(thing, with_thing, to_length):
+    return thing + with_thing * (to_length - len(thing))
 ## NOTE: set_attr methods are currently not implemented. These methods need
 ## to update the file using reader/mmap.
 class LaspyHeaderException(Exception):
@@ -29,17 +31,17 @@ class ParseableVLR():
     def parse_data(self):
         '''Attempt to read VLR or EVLR body into the parsed_body attribute.'''
 
-        if b"LASF_Projection" in self.user_id and self.record_id == 2111:
+        if "LASF_Projection" in self.user_id and self.record_id == 2111:
             # OGC Math Transform WKT Record
             self.body_fmt = util.Format(None)
             self.body_fmt.add("ogc_math_transform", "ctypes.c_char", self.rec_len_after_header)
 
-        elif b"LASF_Projection" in self.user_id and self.record_id == 2112:
+        elif "LASF_Projection" in self.user_id and self.record_id == 2112:
             # OGC Coordinate System WKT
             self.body_fmt = util.Format(None)
             self.body_fmt.add("coordinate_system_wkt", "ctypes.c_char", self.rec_len_after_header)
 
-        elif b"LASF_Projection" in self.user_id and self.record_id == 34735:
+        elif "LASF_Projection" in self.user_id and self.record_id == 34735:
             # GeoKeyDictionaryTag Record
             self.body_fmt = util.Format(None)
             self.body_fmt.add("wKeyDirectoryVersion", "ctypes.c_ushort", 1)
@@ -58,7 +60,7 @@ class ParseableVLR():
                 self.body_fmt.add("wCount_%i" % sKeyEntry, "ctypes.c_ushort", 1)
                 self.body_fmt.add("wValue_Offset_%i" % sKeyEntry, "ctypes.c_ushort", 1)
 
-        elif b"LASF_Projection" in self.user_id and self.record_id == 34736:
+        elif "LASF_Projection" in self.user_id and self.record_id == 34736:
             # Geo Double Params Tag Record
             self.body_fmt = util.Format(None)
             if self.rec_len_after_header % 8 != 0:
@@ -67,12 +69,12 @@ class ParseableVLR():
             for i in xrange(self.rec_len_after_header // 8):
                 self.body_fmt.add("param_%i" % i, "ctypes.c_double", 1)
 
-        elif b"LASF_Projection" in self.user_id and self.record_id == 34737:
+        elif "LASF_Projection" in self.user_id and self.record_id == 34737:
             # GeoAsciiParamsTagRecord
             self.body_fmt = util.Format(None)
             self.body_fmt.add("GeoASCIIParamsTag", "ctypes.c_char", self.rec_len_after_header)
 
-        elif b"LASF_Spec" in self.user_id and self.record_id == 0:
+        elif "LASF_Spec" in self.user_id and self.record_id == 0:
             # Classification Lookup
             self.body_fmt = util.Format(None)
             if self.rec_len_after_header % 16 != 0:
@@ -82,7 +84,7 @@ class ParseableVLR():
                 self.body_fmt.add("ClassNumber_%i", "ctypes.c_ubyte", 1)
                 self.body_fmt.add("Description_%i", "ctypes.c_char", 15)
 
-        elif b"LASF_Spec" in self.user_id and self.record_id == 1:
+        elif "LASF_Spec" in self.user_id and self.record_id == 1:
             # Header Flight line lookup
             self.body_fmt = util.Format(None)
             if self.rec_len_after_header % 257 != 0:
@@ -92,16 +94,16 @@ class ParseableVLR():
                 self.body_fmt.add("FileMarkerNumber_%i", "ctypes.c_ubyte", 1)
                 self.body_fmt.add("Filename_%i", "ctypes.c_char", 256)
 
-        elif b"LASF_Spec" in self.user_id and self.record_id == 3:
+        elif "LASF_Spec" in self.user_id and self.record_id == 3:
             #Text Area Description
             self.body_fmt = util.Format(None)
             self.body_fmt.add("text_area_description", "ctypes.c_char", self.rec_len_after_header)
 
-        elif b"LASF_Spec" in self.user_id and self.record_id == 4:
+        elif "LASF_Spec" in self.user_id and self.record_id == 4:
             # Extra Bytes, currently handled by VLR constructor
             pass
 
-        elif b"LASF_Spec" in self.user_id and self.record_id > 99 and self.record_id < 355:
+        elif "LASF_Spec" in self.user_id and self.record_id > 99 and self.record_id < 355:
             # WAVEFORM PACKET DESCRIPTOR
             self.body_fmt = util.Format(None)
             self.body_fmt.add("bits_per_sample", "ctypes.c_ubyte",1)
@@ -115,6 +117,31 @@ class ParseableVLR():
             self.parsed_body = list(struct.unpack(self.body_fmt.pt_fmt_long, self.VLR_body))
         else:
             self.parsed_body = None
+
+    def to_byte_string(self):
+        '''Pack the entire EVLR into a byte string.'''
+        if type(self.parsed_body) != type(None):
+            self.pack_data()
+
+        user_id = self.user_id.encode('utf-8')
+        user_id = pad(user_id, b'\0', 16)
+        description = self.description.encode('utf-8')
+        description = pad(description, b'\0', 32)
+
+        out = (self.pack("reserved", self.reserved) +
+               self.pack("user_id", user_id) +
+               self.pack("record_id", self.record_id) +
+               self.pack("rec_len_after_header", self.rec_len_after_header) +
+               self.pack("description", description) +
+               self.VLR_body)
+        diff = (self.rec_len_after_header - len(self.VLR_body))
+        if diff > 0:
+            out += b"\x00"*diff
+        elif diff < 0:
+            raise util.LaspyException("Invalid Data: too long for specified rec_len." +
+                                " rec_len_after_header = " + str(self.rec_len_after_header) +
+                                " actual length = " + str(len(self.VLR_body)))
+        return out
 
     def pack(self, name, val):
         '''Pack a VLR field into bytes.'''
@@ -301,10 +328,10 @@ class ExtraBytesStruct(object):
 
 class EVLR(ParseableVLR):
     ''' An extended VLR as defined in LAS specification 1.4'''
-    def __init__(self, user_id, record_id, VLR_body, **kwargs):
+    def __init__(self, user_id, record_id, VLR_body, description='None', **kwargs):
         '''Build the EVLR using the required arguments user_id, record_id, and
         VLR_body. The user can also specify the reserved and description fields if desired.'''
-        self.user_id = str(user_id).encode('utf-8') + b"\x00"*(16-len(str(user_id)))
+        self.user_id = user_id if user_id else 'None'
         self.record_id = record_id
         self.VLR_body = VLR_body
         self.body_fmt = None
@@ -313,10 +340,7 @@ class EVLR(ParseableVLR):
             self.rec_len_after_header = len(self.VLR_body)
         except(TypeError):
             self.rec_len_after_header = 0
-        if "description" in kwargs:
-            self.description = str(kwargs["description"]) + b"\x00"*(32-len(kwargs["description"]))
-        else:
-            self.description = b"\x00"*32
+        self.description = pad(description, '\0', 32)
         if "reserved" in kwargs:
             self.reserved = kwargs["reserved"]
         else:
@@ -345,10 +369,10 @@ class EVLR(ParseableVLR):
     def build_from_reader(self, reader):
         '''Build an evlr from a reader capable of reading in the data.'''
         self.reserved = reader.read_words("reserved", "evlr")
-        self.user_id = b"".join(reader.read_words("user_id", "evlr"))
+        self.user_id = reader.read_words("user_id", "evlr").decode('utf-8', 'ignore').strip()
         self.record_id = reader.read_words("record_id", "evlr")
         self.rec_len_after_header = reader.read_words("rec_len_after_header", "evlr")
-        self.description = b"".join(reader.read_words("description", "evlr"))
+        self.description = reader.read_words("description", "evlr").decode('utf-8', 'ignore').strip()
         self.VLR_body = reader.read(self.rec_len_after_header)
         if self.user_id == "LASF_Spec" and self.record_id == 4:
             self.setup_extra_bytes_spec(self.VLR_body)
@@ -365,33 +389,15 @@ class EVLR(ParseableVLR):
         return self.rec_len_after_header + 60
 
 
-    def to_byte_string(self):
-        '''Pack the entire EVLR into a byte string.'''
-        if type(self.parsed_body) != type(None):
-            self.pack_data()
-        out = (self.pack("reserved", self.reserved) +
-               self.pack("user_id", self.user_id) +
-               self.pack("record_id", self.record_id) +
-               self.pack("rec_len_after_header", self.rec_len_after_header) +
-               self.pack("description", self.description) +
-               self.VLR_body)
-        diff = (self.rec_len_after_header - len(self.VLR_body))
-        if diff > 0:
-            out += b"\x00"*diff
-        elif diff < 0:
-            raise util.LaspyException("Invalid Data in EVLR: too long for specified rec_len." +
-                                " rec_len_after_header = " + str(self.rec_len_after_header) +
-                                " actual length = " + str(len(self.VLR_body)))
-        return out
 
 
 class VLR(ParseableVLR):
     '''An object to create/read/store data from LAS Variable Length Records.
     Requires three arguments: (user_id, string[16]), (record_id, int2), (VLR_body, any data with len < ~65k)'''
-    def __init__(self, user_id, record_id, VLR_body, **kwargs):
+    def __init__(self, user_id, record_id, VLR_body, description='None', **kwargs):
         '''Build the VLR using the required arguments user_id, record_id, and VLR_body
         the user can also specify the reserved and description fields here if desired.'''
-        self.user_id = str(user_id).encode('utf-8') + b"\x00"*(16-len(str(user_id)))
+        self.user_id = user_id if user_id else 'None'
         self.record_id = record_id
         self.VLR_body = VLR_body
         self.type = 0
@@ -401,10 +407,7 @@ class VLR(ParseableVLR):
             self.rec_len_after_header = len(self.VLR_body)
         except(TypeError):
             self.rec_len_after_header = 0
-        if "description" in kwargs:
-            self.description = str(kwargs["description"]) + b"\x00"*(32-len(kwargs["description"]))
-        else:
-            self.description = b"\x00"*32
+        self.description = pad(description, '\0', 32)
         if "reserved" in kwargs:
             self.reserved = kwargs["reserved"]
         else:
@@ -422,12 +425,12 @@ class VLR(ParseableVLR):
         '''Build a vlr from a reader capable of reading in the data.'''
         self.reader = reader
         self.reserved = reader.read_words("reserved")
-        self.user_id = b"".join(reader.read_words("user_id"))
+        self.user_id = reader.read_words("user_id").decode('utf-8','ignore').strip('\0')
         self.record_id = reader.read_words("record_id")
         self.rec_len_after_header = reader.read_words("rec_len_after_header")
-        self.description = b"".join(reader.read_words("description"))
+        self.description = reader.read_words("description").decode('utf-8', 'ignore').strip('\0')
         self.VLR_body = reader.read(self.rec_len_after_header)
-        if b"LASF_Spec" in self.user_id and self.record_id == 4:
+        if "LASF_Spec" in self.user_id and self.record_id == 4:
             self.setup_extra_bytes_spec(self.VLR_body)
         ### LOGICAL CONTENT ###
         self.isVLR = True
@@ -461,24 +464,6 @@ class VLR(ParseableVLR):
         return self.rec_len_after_header + 54
 
 
-    def to_byte_string(self):
-        '''Pack the entire VLR into a byte string.'''
-        if type(self.parsed_body) != type(None):
-            self.pack_data()
-        out = (self.pack("reserved", self.reserved) +
-               self.pack("user_id", self.user_id) +
-               self.pack("record_id", self.record_id) +
-               self.pack("rec_len_after_header", self.rec_len_after_header) +
-               self.pack("description", self.description) +
-               self.VLR_body)
-        diff = (self.rec_len_after_header - len(self.VLR_body))
-        if diff > 0:
-            out += b"\x00"*diff
-        elif diff < 0:
-            raise util.LaspyException("Invalid Data in VLR: too long for specified rec_len." +
-                                " rec_len_after_header = " + str(self.rec_len_after_header) +
-                                " actual length = " + str(len(self.VLR_body)))
-        return out
 
 class Header(object):
     '''The low level header class. Header is built from a laspy.util.Format
