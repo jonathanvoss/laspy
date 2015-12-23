@@ -761,24 +761,26 @@ class HeaderManager(object):
 
     def get_systemid(self):
         '''Returns the system identifier specified in the file'''
-        return self.reader.get_header_property("system_id")
+        return self.reader.get_header_property("system_id").strip('\0')
 
     def set_systemid(self, value):
         '''Sets the system identifier. The value is truncated to 31
         characters'''
         self.assertWriteMode()
+        value = pad(value.encode('utf-8'), b'\0', 32)
         self.writer.set_header_property("system_id", value)
     doc = '''The system ID for the file'''
     system_id = property(get_systemid, set_systemid, None, doc)
 
     def get_softwareid(self):
         '''Returns the software identifier specified in the file'''
-        return self.reader.get_header_property("software_id")
+        return self.reader.get_header_property("software_id").strip('\0')
 
     def set_softwareid(self, value):
         '''Sets the software identifier.
         '''
         self.assertWriteMode()
+        value = pad(value.encode('utf-8'), b'\0', 32)
         return self.writer.set_header_property("software_id", value)
     doc = '''The software ID for the file'''
     software_id = property(get_softwareid, set_softwareid, None, doc)

@@ -380,8 +380,6 @@ class LasHeaderWriterTestCase(unittest.TestCase):
         s2 = self.FileObject.header.get_softwareid()
         self.assertEqual(s1, s2)
         with self.assertRaises(laspy.util.LaspyException):
-            self.FileObject.header.software_id = "123"
-        with self.assertRaises(laspy.util.LaspyException):
             self.FileObject.header.software_id = "1" * 100
     def test_padding(self):
         """Testing Padding"""
@@ -538,6 +536,11 @@ class LasV_13TestCase(unittest.TestCase):
     def setUp(self):
         shutil.copyfile(self.simple, self.tempfile)
         self.File1 = File.File(self.tempfile, mode = "rw")
+
+    def test_system_id(self):
+        pass
+        # sys_id = self.File1.header.get_systemid()
+        #self.assertEqual(sys_id, 'ALSXX')
 
     def test_glob_encode(self):
         """Testing v1.3 Global Encoding"""

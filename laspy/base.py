@@ -1233,26 +1233,23 @@ class Writer(FileManager):
         type_ = dim.fmt[1]
         fmt = '%s%i%s' % (dim.fmt[0], dim.num, dim.fmt[1])
 
-        try:
-            if type_ in 'LlQ':
-                if isinstance(val, str):
-                    val = (ord(v) for v in val)
-                outbyte = struct.pack(fmt, *val)
-            elif type_ in 'B':
-                # somehow something is feeding a list of bytes into this.
+        if type_ in 'LlQ':
+            if isinstance(val, str):
+                val = (ord(v) for v in val)
+            outbyte = struct.pack(fmt, *val)
+        elif type_ in 'B':
+            # somehow something is feeding a list of bytes into this.
+            val = val.encode('utf-8')
+            val2 = bytearray(val)
+            outbyte = struct.pack(fmt, *val2)
+        elif type_ in 's':
+            if isinstance(val, list):
+                val = ''.join(val)
+            if isinstance(val, str) or not onpy3 and isinstance(val, unicode):
                 val = val.encode('utf-8')
-                val2 = bytearray(val)
-                outbyte = struct.pack(fmt, *val2)
-            elif type_ in 's':
-                if isinstance(val, list):
-                    val = ''.join(val)
-                if isinstance(val, str) or not onpy3 and isinstance(val, unicode):
-                    val = val.encode('utf-8')
-                outbyte = struct.pack(fmt, val)
-            else:
-                outbyte = struct.pack(fmt, val)
-        except Exception as e:
-            raise Exception(fmt, val, dim.name)
+            outbyte = struct.pack(fmt, val)
+        else:
+            outbyte = struct.pack(fmt, val)
         start = rec_offs + dim.offs
         end = start + len(outbyte)
         self.data_provider._mmap[start:end] = outbyte
