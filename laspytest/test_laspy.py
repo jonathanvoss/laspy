@@ -538,9 +538,8 @@ class LasV_13TestCase(unittest.TestCase):
         self.File1 = File.File(self.tempfile, mode = "rw")
 
     def test_system_id(self):
-        pass
-        # sys_id = self.File1.header.get_systemid()
-        #self.assertEqual(sys_id, 'ALSXX')
+        sys_id = self.File1.header.get_systemid()
+        self.assertEqual(sys_id, 'ALSXX')
 
     def test_glob_encode(self):
         """Testing v1.3 Global Encoding"""
